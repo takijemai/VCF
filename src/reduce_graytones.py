@@ -11,8 +11,10 @@ FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
-from image_IO import image_1 as gray_image # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
-from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
+# pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
+from image_IO import image_1 as gray_image
+# pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
+from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
 def int_or_str(text):
@@ -34,13 +36,12 @@ DECODE_INPUT = ENCODE_OUTPUT
 DECODE_OUTPUT = "/tmp/reduce_graytones_decoded.png"
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-q", "--QSS", type=int_or_str, help="Quantization step size", default=32)
-#parser.add_argument("-d", "--decode", action="store_true", help="Decode a previously encoded image")
 subparsers = parser.add_subparsers(help='You must specify one of the following subcomands:')
 parser_encode = subparsers.add_parser('encode', help="Encode an image")
 parser_decode = subparsers.add_parser('decode', help='Decode an image')
 parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
 parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=ENCODE_OUTPUT)
+parser_encode.add_argument("-q", "--QSS", type=int_or_str, help=f"Quantization step size (default: 32)", default=32)
 parser_encode.set_defaults(func=encode)
 parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=DECODE_INPUT)
 parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}", default=DECODE_OUTPUT)    
@@ -54,12 +55,11 @@ class Reduce_Graytones:
     def __init__(self, args):
         self.args = args
         logging.info(__doc__)
-        self.Q = Quantizer(Q_step=self.args.QSS, min_val=self.MIN_INDEX_VALUE, max_val=self.MAX_INDEX_VALUE)
+        logging.debug(f"args = {self.args}")
         logging.info(f"quantizer = {quantizer_name}")
 
     def encode(self):
-        #os.system(f"cp -f {self.args.input} /tmp/input_remove_graytones_000.png") 
-        #img = gray_image.read("/tmp/input_remove_graytones_000.png", 0)
+        self.Q = Quantizer(Q_step=self.args.QSS, min_val=self.MIN_INDEX_VALUE, max_val=self.MAX_INDEX_VALUE)
         img = io.imread(self.args.input)
         logging.info(f"Read {self.args.input} of shape {img.shape}")
         img_128 = img.astype(np.int16) - 128
@@ -69,9 +69,16 @@ class Reduce_Graytones:
         rate = gray_image.write(k, f"/tmp/reduce_graytones_encoded_", 0)*8/(k.shape[0]*k.shape[1])
         os.system(f"cp /tmp/reduce_graytones_encoded_000.png {self.args.output}")
         logging.info(f"Generated {os.path.getsize(self.args.output)} bytes in {self.args.output}")
+        with open(f"{self.args.output}.QSS", 'w') as f:
+            f.write(f"{self.args.QSS}")
+        logging.info(f"Written {self.args.output}.QSS")
         return rate
 
     def decode(self):
+        with open(f"{self.args.input}.QSS", 'r') as f:
+            QSS = int(f.read())
+        self.Q = Quantizer(Q_step=QSS, min_val=self.MIN_INDEX_VALUE, max_val=self.MAX_INDEX_VALUE)
+        logging.info(f"Read {QSS} from {self.args.output}.QSS")
         os.system(f"cp -f {self.args.input} /tmp/reduce_graytones_encoded_000.png") 
         k = gray_image.read("/tmp/reduce_graytones_encoded_", 0).astype(np.int16)
         k -= 128
@@ -85,6 +92,7 @@ class Reduce_Graytones:
 if __name__ == "__main__":
     parser.description = __doc__
     args = parser.parse_known_args()[0]
+    #args = parser.parse_args()[0]
     print(args)
 
     try:
@@ -93,14 +101,9 @@ if __name__ == "__main__":
     except AttributeError:
         logging.error("You must specify 'encode' or 'decode'")
         quit()
-    logging.info(f"QSS = {args.QSS}")
 
     codec = Reduce_Graytones(args)
 
     rate = args.func(codec)
-    #if args.decode:
-    #    rate = codec.decode()
-    #else:
-    #    rate = codec.encode()
     logging.info(f"rate = {rate} bits/pixel")
 
