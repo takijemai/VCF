@@ -21,21 +21,20 @@ def int_or_str(text):
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("-i", "--input", type=int_or_str, help="Input image")
 parser.add_argument("-o", "--output", type=int_or_str, help="Output image")
-parser.add_argument("-q", "--QSS", type=int_or_str, help="Quantization step size")
+parser.add_argument("-q", "--QSS", type=int_or_str, help="Quantization step size", default=32)
 parser.add_argument("-d", "--decode", action="store_true", help="Decode")
 
 class Remove_Graytones:
     def __init__(self, args):
         self.args = args
         logging.info(__doc__)
+        self.Q = quantizer(Q_step=self.args.QSS, min_val=-128, max_val=127)
 
     def encode(self):
-        os.system(f"cp {self.args.input} /tmp/input_remove_graytones_000.png") 
+        os.system(f"cp -f {self.args.input} /tmp/input_remove_graytones_000.png") 
         img = gray_image.read("/tmp/input_remove_graytones_000.png", 0)
         img_128 = img.astype(np.int16) - 128
-        QSS = 16 # Quantization Step Size
-        Q = quantizer(Q_step=self.args.QSS, min_val=-128, max_val=127)
-        y, k = Q.encode_decode(img_128)
+        k = self.Q.encode(img_128)
         k += 128 # Only positive components can be written in a PNG file
         k = k.astype(np.uint8)
         rate = gray_image.write(k, f"/tmp/output_remove_graytones_", 0)*8/(k.shape[0]*k.shape[1])
@@ -43,15 +42,11 @@ class Remove_Graytones:
         return rate
 
     def decode(self):
-        os.system(f"cp {self.args.input} /tmp/input_remove_graytones_000.png") 
-        img = gray_image.read("/tmp/input_remove_graytones_000.png", 0)
-        img_128 = img.astype(np.int16) - 128
-        QSS = 16 # Quantization Step Size
-        Q = quantizer(Q_step=self.args.QSS, min_val=-128, max_val=127)
-        y, k = Q.encode_decode(img_128)
-        k += 128 # Only positive components can be written in a PNG file
-        k = k.astype(np.uint8)
-        rate = gray_image.write(k, f"/tmp/output_remove_graytones_", 0)*8/(k.shape[0]*k.shape[1])
+        os.system(f"cp -f {self.args.input} /tmp/input_remove_graytones_000.png") 
+        k = gray_image.read("/tmp/input_remove_graytones_000.png", 0)
+        k += 128
+        y = self.Q.decode(k)
+        rate = gray_image.write(y, f"/tmp/output_remove_graytones_", 0)*8/(k.shape[0]*k.shape[1])
         os.system(f"cp /tmp/output_remove_graytones_000.png {self.args.output}")
         return rate
 
@@ -64,4 +59,8 @@ if __name__ == "__main__":
     args = parser.parse_known_args()[0]
 
     codec = Remove_Graytones(args)
+    if args.decode:
+        codec.decode()
+    else:
+        codec.encode()
 
