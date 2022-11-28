@@ -1,4 +1,4 @@
-'''Exploiting color redundancy with the YCoCg transform.'''
+'''Exploiting spatial redundancy with the YCoCg transform.'''
 
 import argparse
 import os
@@ -16,13 +16,13 @@ logging.basicConfig(format=FORMAT, level=logging.INFO)
 import gray_pixel_static_scalar_quantization
 import color_pixel_static_scalar_quantization
 
-# pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
-#from image_IO import image_3 as color_image
+# pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
+from DWT import color_dyadic_DWT as DWT
 # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import from_RGB
 from color_transforms.YCoCg import to_RGB
 
-class YCoCg(color_pixel_static_scalar_quantization.Color_Pixel_Static_Scalar_Quantization):
+class DWT(YCoCg.YCoCg):
     
     def __init__(self, args):
         super().__init__(args)
