@@ -1,4 +1,4 @@
-'''Image compressor based on scalar quantization and PNG.'''
+'''Pixel Domain Static Scalar Quantization.'''
 
 import argparse
 import os
@@ -31,23 +31,23 @@ def decode(codec):
     return codec.decode()
 
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/barb.png"
-ENCODE_OUTPUT = "/tmp/reduce_graytones_encoded.png"
+ENCODE_OUTPUT = "/tmp/pixel_static_scalar_quantization__encoded"
 DECODE_INPUT = ENCODE_OUTPUT
-DECODE_OUTPUT = "/tmp/reduce_graytones_decoded.png"
+DECODE_OUTPUT = "/tmp/pixel_static_scalar_quantization__decoded"
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 subparsers = parser.add_subparsers(help='You must specify one of the following subcomands:')
 parser_encode = subparsers.add_parser('encode', help="Encode an image")
 parser_decode = subparsers.add_parser('decode', help='Decode an image')
 parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
-parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=ENCODE_OUTPUT)
+parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT}.png)", default=f"{ENCODE_OUTPUT}.png")
 parser_encode.add_argument("-q", "--QSS", type=int_or_str, help=f"Quantization step size (default: 32)", default=32)
 parser_encode.set_defaults(func=encode)
-parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=DECODE_INPUT)
-parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}", default=DECODE_OUTPUT)    
+parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT}.png)", default=f"{DECODE_INPUT}.png")
+parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}.png", default=f"{DECODE_OUTPUT}.png")    
 parser_decode.set_defaults(func=decode)
 
-class Reduce_Graytones:
+class PDSSQ:
 
     MIN_INDEX_VALUE = -128
     MAX_INDEX_VALUE = 127
@@ -66,8 +66,8 @@ class Reduce_Graytones:
         k = self.Q.encode(img_128)
         k += 128 # Only positive components can be written in a PNG file
         k = k.astype(np.uint8)
-        rate = gray_image.write(k, f"/tmp/reduce_graytones_encoded_", 0)*8/(k.shape[0]*k.shape[1])
-        os.system(f"cp /tmp/reduce_graytones_encoded_000.png {self.args.output}")
+        rate = gray_image.write(k, f"{ENCODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
+        os.system(f"cp {ENCODE_OUTPUT}_000.png {self.args.output}")
         logging.info(f"Generated {os.path.getsize(self.args.output)} bytes in {self.args.output}")
         with open(f"{self.args.output}.QSS", 'w') as f:
             f.write(f"{self.args.QSS}")
@@ -79,13 +79,13 @@ class Reduce_Graytones:
             QSS = int(f.read())
         self.Q = Quantizer(Q_step=QSS, min_val=self.MIN_INDEX_VALUE, max_val=self.MAX_INDEX_VALUE)
         logging.info(f"Read {QSS} from {self.args.output}.QSS")
-        os.system(f"cp -f {self.args.input} /tmp/reduce_graytones_encoded_000.png") 
-        k = gray_image.read("/tmp/reduce_graytones_encoded_", 0).astype(np.int16)
+        os.system(f"cp -f {self.args.input} {DECODE_INPUT}_000.png") 
+        k = gray_image.read(f"{DECODE_INPUT}_", 0).astype(np.int16)
         k -= 128
         y = self.Q.decode(k)
         y_128 = y.astype(np.int16) + 128
-        rate = gray_image.write(y_128, f"/tmp/reduce_graytones_decoded_", 0)*8/(k.shape[0]*k.shape[1])
-        os.system(f"cp /tmp/reduce_graytones_decoded_000.png {self.args.output}")
+        rate = gray_image.write(y_128, f"{DECODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
+        os.system(f"cp {DECODE_OUTPUT}_000.png {self.args.output}")
         logging.info(f"Generated {os.path.getsize(self.args.output)} bytes in {self.args.output}")
         return rate
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = Reduce_Graytones(args)
+    codec = PDSSQ(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
