@@ -1,4 +1,4 @@
-'''Pixel Domain Static Scalar Quantization.'''
+'''Gray Pixel Static Scalar Quantization.'''
 
 import argparse
 import os
@@ -37,8 +37,8 @@ DECODE_OUTPUT = "/tmp/decoded.png"
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 subparsers = parser.add_subparsers(help='You must specify one of the following subcomands:')
-parser_encode = subparsers.add_parser('encode', help="Encode an image")
-parser_decode = subparsers.add_parser('decode', help='Decode an image')
+parser_encode = subparsers.add_parser('encode', help="Encode an gray-scaled image")
+parser_decode = subparsers.add_parser('decode', help='Decode an gray-scaled image')
 parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
 parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
 parser_encode.add_argument("-q", "--QSS", type=int_or_str, help=f"Quantization step size (default: 32)", default=32)

@@ -1,4 +1,4 @@
-'''Pixel Domain LloydMax scalar quantization.'''
+'''Pixel Domain LloydMax Scalar Quantization.'''
 
 import argparse
 import os
