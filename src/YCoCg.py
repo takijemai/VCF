@@ -38,7 +38,6 @@ class YCoCg(color_pixel_static_scalar_quantization.Color_Pixel_Static_Scalar_Qua
     def decode(self):
         YCoCg_img = self.decode_image()
         RGB_img_128 = to_RGB(YCoCg_img.astype(np.int16))
-        
         RGB_img = (RGB_img_128 + 128)
         RGB_img = np.clip(RGB_img, 0, 255).astype(np.uint8)
         io.imsave(self.args.output, RGB_img)
