@@ -31,34 +31,33 @@ def decode(codec):
     return codec.decode()
 
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/barb.png"
-ENCODE_OUTPUT = "/tmp/pixel_static_scalar_quantization__encoded"
+ENCODE_OUTPUT = "/tmp/encoded.png"
 DECODE_INPUT = ENCODE_OUTPUT
-DECODE_OUTPUT = "/tmp/pixel_static_scalar_quantization__decoded"
+DECODE_OUTPUT = "/tmp/decoded.png"
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 subparsers = parser.add_subparsers(help='You must specify one of the following subcomands:')
 parser_encode = subparsers.add_parser('encode', help="Encode an image")
 parser_decode = subparsers.add_parser('decode', help='Decode an image')
 parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
-parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT}.png)", default=f"{ENCODE_OUTPUT}.png")
+parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
 parser_encode.add_argument("-q", "--QSS", type=int_or_str, help=f"Quantization step size (default: 32)", default=32)
 parser_encode.set_defaults(func=encode)
-parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT}.png)", default=f"{DECODE_INPUT}.png")
-parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}.png", default=f"{DECODE_OUTPUT}.png")    
+parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
+parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}", default=f"{DECODE_OUTPUT}")    
 parser_decode.set_defaults(func=decode)
 
-class PDSSQ:
+class Gray_Pixel_Static_Scalar_Quantization:
 
     MIN_INDEX_VALUE = -128
     MAX_INDEX_VALUE = 127
 
     def __init__(self, args):
         self.args = args
-        logging.info(__doc__)
         logging.debug(f"args = {self.args}")
-        logging.info(f"quantizer = {quantizer_name}")
 
     def encode(self):
+        logging.info(f"QSS = {self.args.QSS}")
         self.Q = Quantizer(Q_step=self.args.QSS, min_val=self.MIN_INDEX_VALUE, max_val=self.MAX_INDEX_VALUE)
         img = io.imread(self.args.input)
         logging.info(f"Read {self.args.input} of shape {img.shape}")
@@ -68,32 +67,34 @@ class PDSSQ:
         k = k.astype(np.uint8)
         rate = gray_image.write(k, f"{ENCODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
         os.system(f"cp {ENCODE_OUTPUT}_000.png {self.args.output}")
-        logging.info(f"Generated {os.path.getsize(self.args.output)} bytes in {self.args.output}")
-        with open(f"{self.args.output}.QSS", 'w') as f:
+        logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}.png")
+        with open(f"{self.args.output}_QSS.txt", 'w') as f:
             f.write(f"{self.args.QSS}")
-        logging.info(f"Written {self.args.output}.QSS")
+        rate += 1*8/(k.shape[0]*k.shape[1]) # We suppose that the representation of the QSS requires 1 byte
+        logging.info(f"Written {self.args.output}_QSS.txt")
         return rate
 
     def decode(self):
-        with open(f"{self.args.input}.QSS", 'r') as f:
+        with open(f"{self.args.input}_QSS.txt", 'r') as f:
             QSS = int(f.read())
         self.Q = Quantizer(Q_step=QSS, min_val=self.MIN_INDEX_VALUE, max_val=self.MAX_INDEX_VALUE)
-        logging.info(f"Read {QSS} from {self.args.output}.QSS")
-        os.system(f"cp -f {self.args.input} {DECODE_INPUT}_000.png") 
-        k = gray_image.read(f"{DECODE_INPUT}_", 0).astype(np.int16)
+        logging.info(f"Read QSS={QSS} from {self.args.output}_QSS.txt")
+        #os.system(f"cp -f {self.args.input} {DECODE_INPUT}_000.png") 
+        #k = gray_image.read(f"{DECODE_INPUT}_", 0).astype(np.int16)
+        k = io.imread(self.args.input).astype(np.int16)
         k -= 128
         y = self.Q.decode(k)
         y_128 = y.astype(np.int16) + 128
         rate = gray_image.write(y_128, f"{DECODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
         os.system(f"cp {DECODE_OUTPUT}_000.png {self.args.output}")
-        logging.info(f"Generated {os.path.getsize(self.args.output)} bytes in {self.args.output}")
+        logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}")
         return rate
 
 if __name__ == "__main__":
+    logging.info(__doc__)
+    logging.info(f"quantizer = {quantizer_name}")
     parser.description = __doc__
     args = parser.parse_known_args()[0]
-    #args = parser.parse_args()[0]
-    print(args)
 
     try:
         logging.info(f"input = {args.input}")
@@ -102,7 +103,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = PDSSQ(args)
+    codec = Gray_Pixel_Static_Scalar_Quantization(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
