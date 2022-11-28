@@ -17,7 +17,7 @@ import gray_pixel_static_scalar_quantization
 import color_pixel_static_scalar_quantization
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
-from image_IO import image_1 as gray_image
+#from image_IO import image_3 as color_image
 # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import from_RGB
 from color_transforms.YCoCg import to_RGB
@@ -32,19 +32,19 @@ class YCoCg(color_pixel_static_scalar_quantization.Color_Pixel_Static_Scalar_Qua
         logging.info(f"Read {self.args.input} of shape {RGB_img.shape}")
         RGB_img_128 = RGB_img.astype(np.int16) - 128
         YCoCg_img = from_RGB(RGB_img_128)
-        print(YCoCg_img.max(), YCoCg_img.min())
         rate = self.encode_image(YCoCg_img)
         return rate
 
     def decode(self):
         YCoCg_img = self.decode_image()
-        print(YCoCg_img.max(), YCoCg_img.min())
         RGB_img_128 = to_RGB(YCoCg_img.astype(np.int16))
+        
         RGB_img = (RGB_img_128 + 128)
-        print(RGB_img.max(), RGB_img.min())
-        rate = gray_image.write(RGB_img.astype(np.uint8), f"{gray_pixel_static_scalar_quantization.DECODE_OUTPUT}_", 0)*8/(RGB_img.shape[0]*RGB_img.shape[1])
-        os.system(f"cp {gray_pixel_static_scalar_quantization.DECODE_OUTPUT}_000.png {self.args.output}")
-        logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}")
+        RGB_img = np.clip(RGB_img, 0, 255).astype(np.uint8)
+        io.imsave(self.args.output, RGB_img)
+        obytes = os.path.getsize(self.args.output)
+        rate = obytes*8/(RGB_img.shape[0]*RGB_img.shape[1])
+        logging.info(f"Written {obytes} bytes in {self.args.output}")
         return rate
 
 if __name__ == "__main__":

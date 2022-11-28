@@ -12,7 +12,7 @@ logging.basicConfig(format=FORMAT, level=logging.INFO)
 #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
-from image_IO import image_1 as gray_image
+#from image_IO import image_1 as gray_image
 # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
 from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
 from scalar_quantization.deadzone_quantization import name as quantizer_name
@@ -62,9 +62,10 @@ class Gray_Pixel_Static_Scalar_Quantization:
         k = self.Q.encode(img)
         k += 128 # Only positive components can be written in a PNG file
         k = k.astype(np.uint8)
-        rate = gray_image.write(k, f"{ENCODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
-        os.system(f"cp {ENCODE_OUTPUT}_000.png {self.args.output}")
-        logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}.png")
+        io.imsave(self.args.output, k)
+        obytes = os.path.getsize(self.args.output)
+        rate = obytes*8/(k.shape[0]*k.shape[1])
+        logging.info(f"Written {obytes} bytes in {self.args.output}.png")
         with open(f"{self.args.output}_QSS.txt", 'w') as f:
             f.write(f"{self.args.QSS}")
         rate += 1*8/(k.shape[0]*k.shape[1]) # We suppose that the representation of the QSS requires 1 byte
@@ -90,10 +91,11 @@ class Gray_Pixel_Static_Scalar_Quantization:
 
     def decode(self):
         y = self.decode_image()
-        y_128 = y.astype(np.int16) + 128
-        rate = gray_image.write(y_128, f"{DECODE_OUTPUT}_", 0)*8/(y.shape[0]*y.shape[1])
-        os.system(f"cp {DECODE_OUTPUT}_000.png {self.args.output}")
-        logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}")
+        y_128 = (y.astype(np.int16) + 128).astype(np.uint8)
+        io.imsave(self.args.output, y_128)
+        obytes = os.path.getsize(self.args.output)
+        rate = obytes*8/(y_128.shape[0]*y_128.shape[1])
+        logging.info(f"Written {obytes} bytes in {self.args.output}")
         return rate
 
 if __name__ == "__main__":
