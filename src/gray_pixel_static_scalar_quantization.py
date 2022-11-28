@@ -37,8 +37,8 @@ DECODE_OUTPUT = "/tmp/decoded.png"
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 subparsers = parser.add_subparsers(help='You must specify one of the following subcomands:')
-parser_encode = subparsers.add_parser('encode', help="Encode an gray-scaled image")
-parser_decode = subparsers.add_parser('decode', help='Decode an gray-scaled image')
+parser_encode = subparsers.add_parser('encode', help="Encode a gray-scaled image")
+parser_decode = subparsers.add_parser('decode', help='Decode a gray-scaled image')
 parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
 parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
 parser_encode.add_argument("-q", "--QSS", type=int_or_str, help=f"Quantization step size (default: 32)", default=32)
@@ -49,20 +49,17 @@ parser_decode.set_defaults(func=decode)
 
 class Gray_Pixel_Static_Scalar_Quantization:
 
-    MIN_INDEX_VALUE = -128
-    MAX_INDEX_VALUE = 127
+    #MIN_INDEX_VALUE = -128
+    #MAX_INDEX_VALUE = 127
 
     def __init__(self, args):
         self.args = args
         logging.debug(f"args = {self.args}")
 
-    def encode(self):
+    def encode_image(self, img, min_index_val=-128, max_index_val=127):
         logging.info(f"QSS = {self.args.QSS}")
-        self.Q = Quantizer(Q_step=self.args.QSS, min_val=self.MIN_INDEX_VALUE, max_val=self.MAX_INDEX_VALUE)
-        img = io.imread(self.args.input)
-        logging.info(f"Read {self.args.input} of shape {img.shape}")
-        img_128 = img.astype(np.int16) - 128
-        k = self.Q.encode(img_128)
+        self.Q = Quantizer(Q_step=self.args.QSS, min_val=min_index_val, max_val=max_index_val)
+        k = self.Q.encode(img)
         k += 128 # Only positive components can be written in a PNG file
         k = k.astype(np.uint8)
         rate = gray_image.write(k, f"{ENCODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
@@ -74,18 +71,27 @@ class Gray_Pixel_Static_Scalar_Quantization:
         logging.info(f"Written {self.args.output}_QSS.txt")
         return rate
 
-    def decode(self):
+    def encode(self):
+        img = io.imread(self.args.input)
+        logging.info(f"Read {self.args.input} of shape {img.shape}")
+        img_128 = img.astype(np.int16) - 128
+        rate = self.encode_image(img_128)
+        return rate
+
+    def decode_image(self, min_index_val=-128, max_index_val=127):
         with open(f"{self.args.input}_QSS.txt", 'r') as f:
             QSS = int(f.read())
-        self.Q = Quantizer(Q_step=QSS, min_val=self.MIN_INDEX_VALUE, max_val=self.MAX_INDEX_VALUE)
+        self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
         logging.info(f"Read QSS={QSS} from {self.args.output}_QSS.txt")
-        #os.system(f"cp -f {self.args.input} {DECODE_INPUT}_000.png") 
-        #k = gray_image.read(f"{DECODE_INPUT}_", 0).astype(np.int16)
         k = io.imread(self.args.input).astype(np.int16)
         k -= 128
         y = self.Q.decode(k)
+        return y
+
+    def decode(self):
+        y = self.decode_image()
         y_128 = y.astype(np.int16) + 128
-        rate = gray_image.write(y_128, f"{DECODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
+        rate = gray_image.write(y_128, f"{DECODE_OUTPUT}_", 0)*8/(y.shape[0]*y.shape[1])
         os.system(f"cp {DECODE_OUTPUT}_000.png {self.args.output}")
         logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}")
         return rate

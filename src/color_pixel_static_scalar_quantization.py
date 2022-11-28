@@ -27,7 +27,7 @@ parser_decode_color.add_argument("-i", "--input", type=gray_pixel_static_scalar_
 parser_decode_color.add_argument("-o", "--output", type=gray_pixel_static_scalar_quantization.int_or_str, help=f"Output image (default: {gray_pixel_static_scalar_quantization.DECODE_OUTPUT}", default=f"{gray_pixel_static_scalar_quantization.DECODE_OUTPUT}")    
 parser_decode_color.set_defaults(func=gray_pixel_static_scalar_quantization.decode)
 
-class Color_Pixel_LloydMax_Quantization(gray_pixel_static_scalar_quantization.Gray_Pixel_Static_Scalar_Quantization):
+class Color_Pixel_Static_Scalar_Quantization(gray_pixel_static_scalar_quantization.Gray_Pixel_Static_Scalar_Quantization):
     
     def __init__(self, args):
         super().__init__(args)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = Color_Pixel_LloydMax_Quantization(args)
+    codec = Color_Pixel_Static_Scalar_Quantization(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
