@@ -1,2 +1,2 @@
 # image_coding
-A configurable image codec for compression and transmission.
+A framework to develop and test image and video compression algorithms.
