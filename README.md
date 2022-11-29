@@ -1,2 +1,2 @@
-# image_coding
-A framework to develop and test image and video compression algorithms.
+# Visual Coding Framework
+A programming environment to develop and test image and video compression algorithms.
