@@ -52,9 +52,9 @@ class Deadzone_Quantizer(entropy.Entropy_Codec):
     def decode(self):
         '''Read a quantized image, "dequantize", and save.'''
         k = self.read()
-        y = self.dequantize(k)
-        y_128 = (y.astype(np.int16) + 128).astype(np.uint8)
-        rate = self.save(y_128)
+        y_128 = self.dequantize(k)
+        y = (y_128.astype(np.int16) + 128).astype(np.uint8)
+        rate = self.save(y)
         return rate
 
     def dequantize(self, k, min_index_val=-128, max_index_val=127):

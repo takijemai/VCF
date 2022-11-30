@@ -1,4 +1,4 @@
-'''Exploiting color redundancy with the YCoCg transform.'''
+'''Exploiting color (perceptual) redundancy with the YCoCg transform.'''
 
 import argparse
 import os
@@ -13,8 +13,8 @@ FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
-import gray_pixel_static_scalar_quantization
-import color_pixel_static_scalar_quantization
+import entropy
+import deadzone
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
 #from image_IO import image_3 as color_image
@@ -22,35 +22,33 @@ import color_pixel_static_scalar_quantization
 from color_transforms.YCoCg import from_RGB
 from color_transforms.YCoCg import to_RGB
 
-class YCoCg(color_pixel_static_scalar_quantization.Color_Pixel_Static_Scalar_Quantization):
+class YCoCg(deadzone.Deadzone_Quantizer):
     
-    def __init__(self, args):
+    def __init__(self, args): # ??
         super().__init__(args)
 
     def encode(self):
-        RGB_img = io.imread(self.args.input)
-        logging.info(f"Read {self.args.input} of shape {RGB_img.shape}")
-        RGB_img_128 = RGB_img.astype(np.int16) - 128
-        YCoCg_img = from_RGB(RGB_img_128)
-        rate = self.encode_image(YCoCg_img)
+        img = self.read()
+        img_128 = img.astype(np.int16) - 128
+        YCoCg_img = from_RGB(img_128)
+        k, rate = self.quantize(YCoCg_img)
+        rate += self.save(k)
         return rate
 
     def decode(self):
-        YCoCg_img = self.decode_image()
-        RGB_img_128 = to_RGB(YCoCg_img.astype(np.int16))
-        RGB_img = (RGB_img_128 + 128)
-        RGB_img = np.clip(RGB_img, 0, 255).astype(np.uint8)
-        io.imsave(self.args.output, RGB_img)
-        obytes = os.path.getsize(self.args.output)
-        rate = obytes*8/(RGB_img.shape[0]*RGB_img.shape[1])
-        logging.info(f"Written {obytes} bytes in {self.args.output}")
+        k = self.read()
+        YCoCg_y = self.dequantize(k)
+        y_128 = to_RGB(YCoCg_y.astype(np.int16))
+        y = (y_128.astype(np.int16) + 128)
+        y = np.clip(y, 0, 255).astype(np.uint8)
+        rate = self.save(y)
         return rate
 
 if __name__ == "__main__":
     logging.info(__doc__)
-    logging.info(f"quantizer = {gray_pixel_static_scalar_quantization.quantizer_name}")
-    gray_pixel_static_scalar_quantization.parser.description = __doc__
-    args = gray_pixel_static_scalar_quantization.parser.parse_known_args()[0]
+    #logging.info(f"quantizer = {gray_pixel_static_scalar_quantization.quantizer_name}")
+    entropy.parser.description = __doc__
+    args = entropy.parser.parse_known_args()[0]
 
     try:
         logging.info(f"input = {args.input}")
