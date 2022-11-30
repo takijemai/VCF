@@ -74,10 +74,10 @@ class PNG_Codec:
         '''Save to disk the image.'''
         # The encoding algorithm depends on the output file extension.
         io.imsave(self.args.output, img)
-        obytes = os.path.getsize(self.args.output)
-        rate = obytes*8/(img.shape[0]*img.shape[1])
-        logging.info(f"Written {obytes} bytes in {self.args.output}")
-        return rate
+        if __debug__:
+            required_bytes = os.path.getsize(self.args.output)
+        logging.info(f"Written {required_bytes} bytes in {self.args.output}")
+        return required_bytes
 
 if __name__ == "__main__":
     logging.info(__doc__) # ?
