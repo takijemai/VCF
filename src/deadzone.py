@@ -1,7 +1,6 @@
 '''Image quantization using a deadzone scalar quantizer'''
 
 import argparse
-import os
 from skimage import io # pip install scikit-image
 import numpy as np
 

@@ -1,10 +1,8 @@
-'''Exploiting spatial redundancy with the YCoCg transform.'''
+'''Exploiting spatial (perceptual) redundancy with the Discrete Wavelet Transform.'''
 
 import argparse
-import os
 from skimage import io # pip install scikit-image
 import numpy as np
-import gzip
 
 import logging
 #FORMAT = "%(module)s: %(message)s"
