@@ -11,7 +11,7 @@ FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
-import entropy
+import PNG
 import deadzone
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
@@ -45,8 +45,8 @@ class YCoCg(deadzone.Deadzone_Quantizer):
 if __name__ == "__main__":
     logging.info(__doc__)
     #logging.info(f"quantizer = {gray_pixel_static_scalar_quantization.quantizer_name}")
-    entropy.parser.description = __doc__
-    args = entropy.parser.parse_known_args()[0]
+    PNG.parser.description = __doc__
+    args = PNG.parser.parse_known_args()[0]
 
     try:
         logging.info(f"input = {args.input}")

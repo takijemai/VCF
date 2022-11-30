@@ -1,4 +1,4 @@
-'''Entropy Encoding of images using PNG.'''
+'''Entropy Encoding of images using PNG (Portable Network Graphics).'''
 
 import argparse
 import os
@@ -40,7 +40,7 @@ parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image 
 parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}", default=f"{DECODE_OUTPUT}")    
 parser_decode.set_defaults(func=decode)
 
-class Entropy_Codec:
+class PNG_Codec:
 
     def __init__(self, args):
         self.args = args
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = Entropy_Codec(args)
+    codec = PNG_Codec(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")

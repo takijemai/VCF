@@ -17,11 +17,11 @@ logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
-import entropy
+import PNG
 
-entropy.parser_encode.add_argument("-q", "--QSS", type=entropy.int_or_str, help=f"Quantization step size (default: 32)", default=32)
+PNG.parser_encode.add_argument("-q", "--QSS", type=PNG.int_or_str, help=f"Quantization step size (default: 32)", default=32)
 
-class Deadzone_Quantizer(entropy.Entropy_Codec):
+class Deadzone_Quantizer(PNG.PNG_Codec):
 
     def __init__(self, args): # ???
         self.args = args
@@ -70,9 +70,9 @@ class Deadzone_Quantizer(entropy.Entropy_Codec):
 if __name__ == "__main__":
     logging.info(__doc__) # ???
     logging.info(f"quantizer = {quantizer_name}")
-    entropy.parser.description = __doc__
-    args = entropy.parser.parse_known_args()[0]
-    #args = entropy.parser.parse_args()
+    PNG.parser.description = __doc__
+    args = PNG.parser.parse_known_args()[0]
+    #args = PNG.parser.parse_args()
 
     try:
         logging.info(f"input = {args.input}")
