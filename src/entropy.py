@@ -47,36 +47,32 @@ class Entropy_Codec:
         logging.debug(f"args = {self.args}")
 
     def encode(self):
-        '''Read an image and save it in the disk. The encoding
-        algorithm depends on the output file extension. The input can
-        be online.'''
-        img = io.imread(self.args.input)
-        logging.info(f"Read {self.args.input} of shape {img.shape}")
+        '''Read an image and save it in the disk.'''
+        # The input can be online.
+        img = self.read()
         rate = self.save(img)
         return rate
 
-    def save(self, img):
-        '''Save to disk the image <img> (considering the extension).'''
-        io.imsave(self.args.output, img)
-        obytes = os.path.getsize(self.args.output)
-        rate = obytes*8/(img.shape[0]*img.shape[1])
-        logging.info(f"Written {obytes} bytes in {self.args.output}.png")
+    def decode(self):
+        '''Read an image and save it in the disk.'''
+        img = self.read()
+        rate = self.save(img)
         return rate
 
-    def decode(self):
-        '''Read an image (that can be online) and save it in the disk.
-        The encoding algorithm depends on the file extension.'''
-        img = self.read()
+    def read(self):
+        '''Read an image.'''
+        img = io.imread(self.args.input)
+        logging.info(f"Read {self.args.input} of shape {img.shape}")
+        return img
+
+    def save(self, img):
+        '''Save to disk the image.'''
+        # The encoding algorithm depends on the output file extension.
         io.imsave(self.args.output, img)
         obytes = os.path.getsize(self.args.output)
         rate = obytes*8/(img.shape[0]*img.shape[1])
         logging.info(f"Written {obytes} bytes in {self.args.output}")
         return rate
-
-    def read(self):
-        '''Read an image (that can be online).'''
-        img = io.imread(self.args.input)
-        return img
 
 if __name__ == "__main__":
     logging.info(__doc__) # ?
