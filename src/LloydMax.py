@@ -33,8 +33,9 @@ class LloydMax_Quantizer(PNG.PNG_Codec):
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
         img = self.read()
-        k, rate = self.quantize(img)
-        rate += self.save(k)
+        k, required_bytes = self.quantize(img)
+        required_bytes += self.save(k)
+        rate = (required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def quantize(self, img):
@@ -42,7 +43,7 @@ class LloydMax_Quantizer(PNG.PNG_Codec):
         logging.info(f"QSS = {self.args.QSS}")
         with open(f"{self.args.output}_QSS.txt", 'w') as f:
             f.write(f"{self.args.QSS}")
-        rate = 1*8/(img.shape[0]*img.shape[1]) # We suppose that the representation of the QSS requires 1 byte
+        required_bytes = 1 # We suppose that the representation of the QSS requires 1 byte
         logging.info(f"Written {self.args.output}_QSS.txt")
         if len(img.shape) < 3:
             extended_img = np.expand_dims(img, axis=2)
@@ -60,15 +61,16 @@ class LloydMax_Quantizer(PNG.PNG_Codec):
                 np.save(file=f, arr=centroids)
             len_codebook = os.path.getsize(f"{self.args.output}_centroids_{c}.gz")
             logging.info(f"Written {len_codebook} bytes in {self.args.output}_centroids_{c}.gz")
-            rate += len_codebook/8/(img.shape[0]*img.shape[1])
+            required_bytes += len_codebook
             k[..., c] = self.Q.encode(extended_img[..., c])
-        return k, rate
+        return k, required_bytes
 
     def decode(self):
         #k = io.imread(self.args.input)
         k = self.read()
         y = self.dequantize(k)
-        rate = self.save(y)
+        required_bytes = self.save(y)
+        rate = (required_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
     def dequantize(self, k):
