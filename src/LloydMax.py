@@ -33,6 +33,12 @@ class LloydMax_Quantizer(entropy.Entropy_Codec):
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
         img = self.read()
+        k, rate = self.quantize(img)
+        rate += self.save(k)
+        return rate
+
+    def quantize(self, img):
+        '''Quantize the image.'''
         logging.info(f"QSS = {self.args.QSS}")
         with open(f"{self.args.output}_QSS.txt", 'w') as f:
             f.write(f"{self.args.QSS}")
@@ -56,15 +62,16 @@ class LloydMax_Quantizer(entropy.Entropy_Codec):
             logging.info(f"Written {len_codebook} bytes in {self.args.output}_centroids_{c}.gz")
             rate += len_codebook/8/(img.shape[0]*img.shape[1])
             k[..., c] = self.Q.encode(extended_img[..., c])
-        k = k.astype(np.uint8)
-        io.imsave(self.args.output, k)
-        obytes = os.path.getsize(self.args.output)
-        rate = obytes*8/(img.shape[0]*img.shape[1])
-        logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}")
-        return rate
+        return k, rate
 
     def decode(self):
-        k = io.imread(self.args.input)
+        #k = io.imread(self.args.input)
+        k = self.read()
+        y = self.dequantize(k)
+        rate = self.save(y)
+        return rate
+
+    def dequantize(self, k):
         with open(f"{self.args.input}_QSS.txt", 'r') as f:
             QSS = int(f.read())
         logging.info(f"Read QSS={QSS} from {self.args.output}_QSS.txt")
@@ -80,9 +87,7 @@ class LloydMax_Quantizer(entropy.Entropy_Codec):
             self.Q = Quantizer(Q_step=QSS, counts=np.ones(shape=256))
             self.Q.set_representation_levels(centroids)
             y[..., c] = self.Q.decode(extended_k[..., c])
-        rate = self.save(y)
-        logging.info(f"Witten {os.path.getsize(self.args.output)} bytes in {self.args.output}")
-        return rate
+        return y
 
 if __name__ == "__main__":
     logging.info(__doc__)
