@@ -1,4 +1,4 @@
-'''Pixel Domain LloydMax Scalar Quantization.'''
+'''Image quantization using a LloydMax quantizer.'''
 
 import argparse
 import os
@@ -19,34 +19,44 @@ from image_IO import image_1 as gray_image
 from scalar_quantization.LloydMax_quantization import LloydMax_Quantizer as Quantizer
 from scalar_quantization.LloydMax_quantization import name as quantizer_name
 
-import gray_pixel_static_scalar_quantization
+import entropy
 
-class Gray_Pixel_LloydMax_Quantization(gray_pixel_static_scalar_quantization.Gray_Pixel_Static_Scalar_Quantization):
+entropy.parser.add_argument("-q", "--QSS", type=entropy.int_or_str, help=f"Quantization step size (default: 32)", default=32)
+
+class LloydMax_Quantizer(entropy.Entropy_Codec):
     
-    def __init__(self, args):
+    def __init__(self, args): # ??
         super().__init__(args)
 
     def encode(self):
-        logging.info(f"QSS = {self.args.QSS}")
-        img = io.imread(self.args.input)
-        logging.info(f"Read {self.args.input} of shape {img.shape}")
-        histogram_img, bin_edges_img = np.histogram(img, bins=256, range=(0, 256))
-        self.Q = Quantizer(Q_step=self.args.QSS, counts=histogram_img)
-        k = self.Q.encode(img)
-        k = k.astype(np.uint8)
-        rate = gray_image.write(k, f"{gray_pixel_static_scalar_quantization.ENCODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
-        os.system(f"cp {gray_pixel_static_scalar_quantization.ENCODE_OUTPUT}_000.png {self.args.output}")
-        logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}")
-        centroids = self.Q.get_representation_levels()
-        with gzip.GzipFile(f"{self.args.output}_centroids.gz", "w") as f:
-            np.save(file=f, arr=centroids)
-        len_codebook = os.path.getsize(f"{self.args.output}_centroids.gz")
-        logging.info(f"Written {len_codebook} bytes in {self.args.output}_centroids.gz")
-        rate += len_codebook/8/(k.shape[0]*k.shape[1])
+        '''Read an image, quantize the image, and save it.'''
+        img = self.read()
         with open(f"{self.args.output}_QSS.txt", 'w') as f:
             f.write(f"{self.args.QSS}")
-        rate += 1*8/(k.shape[0]*k.shape[1]) # We suppose that the representation of the QSS requires 1 byte
+        rate = 1*8/(img.shape[0]*img.shape[1]) # We suppose that the representation of the QSS requires 1 byte
         logging.info(f"Written {self.args.output}_QSS.txt")
+        #extended_img = np.expand_dims(img, axis=2)
+        #k = np.empty_like(extended_img)
+        k = np.empty_like(img)
+        print(k.shape)
+        #for c in range(extended_img.shape[2]):
+        for c in range(img.shape[2]):
+            #histogram_img, bin_edges_img = np.histogramdd(extended_img[..., c], bins=256, range=(0, 256))
+            histogram_img, bin_edges_img = np.histogram(img[..., c], bins=256, range=(0, 256))
+            logging.info(f"histogram = {histogram_img}")
+            self.Q = Quantizer(Q_step=self.args.QSS, counts=histogram_img)
+            centroids = self.Q.get_representation_levels()
+            with gzip.GzipFile(f"{self.args.output}_centroids_{c}.gz", "w") as f:
+                np.save(file=f, arr=centroids)
+            len_codebook = os.path.getsize(f"{self.args.output}_centroids_{c}.gz")
+            logging.info(f"Written {len_codebook} bytes in {self.args.output}_centroids_{c}.gz")
+            rate += len_codebook/8/(img.shape[0]*img.shape[1])
+            #k[..., c] = self.Q.encode(extended_img[..., c])
+            k[..., c] = self.Q.encode(img[..., c])
+            k[..., c] = k[..., c].astype(np.uint8)
+        rate += gray_image.write(k, f"{entropy.ENCODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
+        os.system(f"cp {entropy.ENCODE_OUTPUT}_000.png {self.args.output}")
+        logging.info(f"Written {os.path.getsize(self.args.output)} bytes in {self.args.output}")
         return rate
 
     def decode(self):
@@ -55,15 +65,15 @@ class Gray_Pixel_LloydMax_Quantization(gray_pixel_static_scalar_quantization.Gra
         logging.info(f"Read QSS={QSS} from {self.args.output}_QSS.txt")
         with gzip.GzipFile(f"{self.args.input}_centroids.gz", "r") as f:
             centroids = np.load(file=f)
-        logging.info(f"Rea {self.args.input}_centroids.gz")
-        self.Q = Quantizer(Q_step=QSS, counts=np.ones(256))
+        logging.info(f"Read {self.args.input}_centroids.gz")
+        self.Q = Quantizer(Q_step=QSS, counts=np.ones(shape=256))
         self.Q.set_representation_levels(centroids)
         #os.system(f"cp -f {self.args.input} {DECODE_INPUT}_000.png") 
         #k = gray_image.read(f"{DECODE_INPUT}_", 0).astype(np.int16)
         k = io.imread(self.args.input).astype(np.int16)
         y = self.Q.decode(k)
-        rate = gray_image.write(y, f"{gray_pixel_static_scalar_quantization.DECODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
-        os.system(f"cp {gray_pixel_static_scalar_quantization.DECODE_OUTPUT}_000.png {self.args.output}")
+        rate = gray_image.write(y, f"{entropy.DECODE_OUTPUT}_", 0)*8/(k.shape[0]*k.shape[1])
+        os.system(f"cp {entropy.DECODE_OUTPUT}_000.png {self.args.output}")
         logging.info(f"Witten {os.path.getsize(self.args.output)} bytes in {self.args.output}")
         return rate
 
@@ -85,8 +95,8 @@ class Gray_Pixel_LloydMax_Quantization(gray_pixel_static_scalar_quantization.Gra
 if __name__ == "__main__":
     logging.info(__doc__)
     logging.info(f"quantizer = {quantizer_name}")
-    gray_pixel_static_scalar_quantization.parser.description = __doc__
-    args = gray_pixel_static_scalar_quantization.parser.parse_known_args()[0]
+    entropy.parser.description = __doc__
+    args = entropy.parser.parse_known_args()[0]
 
     try:
         logging.info(f"input = {args.input}")
@@ -95,7 +105,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = Gray_Pixel_LloydMax_Quantization(args)
+    codec = LloydMax_Quantizer(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
