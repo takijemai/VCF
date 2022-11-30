@@ -9,8 +9,8 @@ import logging
 #FORMAT = "%(module)s: %(message)s"
 FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 #logging.basicConfig(format=FORMAT)
-logging.basicConfig(format=FORMAT, level=logging.INFO)
-#logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+#logging.basicConfig(format=FORMAT, level=logging.INFO)
+logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
 #from image_IO import image_1 as gray_image
