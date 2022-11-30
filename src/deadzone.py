@@ -49,24 +49,21 @@ class Deadzone_Quantizer(entropy.Entropy_Codec):
         return k, rate
 
     def decode(self):
-        '''Read a quantized image, "unquantize" the image, and save
-        it.'''
-        y = self.read_and_dequantize()
+        '''Read a quantized image, "dequantize", and save.'''
+        k = self.read()
+        y = self.dequantize(k)
         y_128 = (y.astype(np.int16) + 128).astype(np.uint8)
-        io.imsave(self.args.output, y_128)
-        obytes = os.path.getsize(self.args.output)
-        rate = obytes*8/(y_128.shape[0]*y_128.shape[1])
-        logging.info(f"Written {obytes} bytes in {self.args.output}")
+        rate = self.save(y_128)
         return rate
 
-    def read_and_dequantize(self, min_index_val=-128, max_index_val=127):
-        '''Read a quantized image, and "dequantize" it.'''
+    def dequantize(self, k, min_index_val=-128, max_index_val=127):
+        '''"Dequantize" an image.'''
+        k = k.astype(np.int16)
+        k -= 128
         with open(f"{self.args.input}_QSS.txt", 'r') as f:
             QSS = int(f.read())
         self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
         logging.info(f"Read QSS={QSS} from {self.args.output}_QSS.txt")
-        k = io.imread(self.args.input).astype(np.int16)
-        k -= 128
         y = self.Q.decode(k)
         return y
 
