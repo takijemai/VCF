@@ -30,20 +30,22 @@ class DWT2D(YCoCg.YCoCg):
 
     def __init__(self, args):
         super().__init__(args)
+        self.levels = args.levels
         self.wavelet = pywt.Wavelet(args.wavelet)
 
     def encode(self):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         YCoCg_img = from_RGB(img_128)
-        DWT_img = analyze(YCoCg_img, self.wavelet, self.args.levels)
-        k, rate = self.quantize(DWT_img)
-        rate += self.save(k)
+        decom_img = analyze(YCoCg_img, self.wavelet, self.args.levels)
+        decom_k = self.quantize_decom(decom_img)
+        self.required_bytes += self.save_decom(k_decom)
+        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
-    def quantize(self, decomp):
-        LL = decomp[0]
-        rate, LL_k = self.quantize(LL)
+    def quantize_decom(self, decom):
+        LL = decom[0]
+        LL_k = self.quantize(LL)
         decom_k = [add_offset(LL_k)]
         sbc_counter = 1
         for sr in decom[1:]:

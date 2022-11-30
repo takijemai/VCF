@@ -8,8 +8,8 @@ import logging
 #FORMAT = "%(module)s: %(message)s"
 FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 #logging.basicConfig(format=FORMAT)
-#logging.basicConfig(format=FORMAT, level=logging.INFO)
-logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+logging.basicConfig(format=FORMAT, level=logging.INFO)
+#logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
 #from image_IO import image_1 as gray_image
@@ -25,7 +25,6 @@ class Deadzone_Quantizer(PNG.PNG_Codec):
 
     def __init__(self, args, min_index_val=-128, max_index_val=127): # ???
         super().__init__(args)
-        #self.args = args
         logging.debug(f"args = {self.args}")
         if self.encoding:
             self.QSS = args.QSS
@@ -45,8 +44,7 @@ class Deadzone_Quantizer(PNG.PNG_Codec):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         k = self.quantize(img_128)
-        self.required_bytes += self.save(k)
-        logging.debug(f"required_bytes = {self.required_bytes}")
+        self.save(k)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
@@ -62,8 +60,7 @@ class Deadzone_Quantizer(PNG.PNG_Codec):
         k = self.read()
         y_128 = self.dequantize(k)
         y = (y_128.astype(np.int16) + 128).astype(np.uint8)
-        self.required_bytes += self.save(y)
-        logging.debug(f"required_bytes = {self.required_bytes}")
+        self.save(y)
         rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 

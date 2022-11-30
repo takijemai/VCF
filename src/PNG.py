@@ -50,18 +50,21 @@ class PNG_Codec:
         else:
             self.encoding = False
         logging.debug(f"encoding = {self.encoding}")
+        self.required_bytes = 0
 
     def encode(self):
         '''Read an image and save it in the disk.'''
         # The input can be online.
         img = self.read()
-        rate = self.save(img)
+        self.save(img)
+        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def decode(self):
         '''Read an image and save it in the disk.'''
         img = self.read()
-        rate = self.save(img)
+        self.save(img)
+        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def read(self):
@@ -75,9 +78,8 @@ class PNG_Codec:
         # The encoding algorithm depends on the output file extension.
         io.imsave(self.args.output, img)
         if __debug__:
-            required_bytes = os.path.getsize(self.args.output)
-        logging.info(f"Written {required_bytes} bytes in {self.args.output}")
-        return required_bytes
+            self.required_bytes = os.path.getsize(self.args.output)
+        logging.info(f"Written {self.required_bytes} bytes in {self.args.output}")
 
 if __name__ == "__main__":
     logging.info(__doc__) # ?
