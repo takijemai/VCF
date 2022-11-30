@@ -30,9 +30,9 @@ DECODE_INPUT = ENCODE_OUTPUT
 DECODE_OUTPUT = "/tmp/decoded.png"
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-subparsers = parser.add_subparsers(help='You must specify one of the following subcomands:')
-parser_encode = subparsers.add_parser('encode', help="Encode an image")
-parser_decode = subparsers.add_parser('decode', help='Decode an image')
+subparsers = parser.add_subparsers(help="You must specify one of the following subcomands:", dest="subparser_name")
+parser_encode = subparsers.add_parser("encode", help="Encode an image")
+parser_decode = subparsers.add_parser("decode", help='Decode an image')
 parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
 parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
 parser_encode.set_defaults(func=encode)
@@ -45,6 +45,11 @@ class PNG_Codec:
     def __init__(self, args):
         self.args = args
         logging.debug(f"args = {self.args}")
+        if args.subparser_name == "encode":
+            self.encoding = True
+        else:
+            self.encoding = False
+        logging.debug(f"encoding = {self.encoding}")
 
     def encode(self):
         '''Read an image and save it in the disk.'''
@@ -77,7 +82,8 @@ class PNG_Codec:
 if __name__ == "__main__":
     logging.info(__doc__) # ?
     parser.description = __doc__
-    args = parser.parse_known_args()[0]
+    #args = parser.parse_known_args()[0]
+    args = parser.parse_args()
 
     try:
         logging.info(f"input = {args.input}")

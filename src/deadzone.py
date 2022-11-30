@@ -23,47 +23,53 @@ PNG.parser_encode.add_argument("-q", "--QSS", type=PNG.int_or_str, help=f"Quanti
 
 class Deadzone_Quantizer(PNG.PNG_Codec):
 
-    def __init__(self, args): # ???
-        self.args = args
+    def __init__(self, args, min_index_val=-128, max_index_val=127): # ???
+        super().__init__(args)
+        #self.args = args
         logging.debug(f"args = {self.args}")
+        if self.encoding:
+            self.QSS = args.QSS
+            logging.info(f"QSS = {self.QSS}")
+            with open(f"{args.output}_QSS.txt", 'w') as f:
+                f.write(f"{self.args.QSS}")
+                logging.info(f"Written {self.args.output}_QSS.txt")
+            self.required_bytes = 1 # We suppose that the representation of QSS requires 1 byte.
+        else:
+            with open(f"{args.input}_QSS.txt", 'r') as f:
+                self.QSS = int(f.read())
+                logging.info(f"Read QSS={self.QSS} from {self.args.output}_QSS.txt")
+        self.Q = Quantizer(Q_step=self.QSS, min_val=min_index_val, max_val=max_index_val)
 
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
         img = self.read()
         img_128 = img.astype(np.int16) - 128
-        k, rate = self.quantize(img_128)
-        rate += self.save(k)
+        k = self.quantize(img_128)
+        self.required_bytes += self.save(k)
+        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
-    def quantize(self, img, min_index_val=-128, max_index_val=127):
+    def quantize(self, img):
         '''Quantize the image.'''
-        logging.info(f"QSS = {self.args.QSS}")
-        self.Q = Quantizer(Q_step=self.args.QSS, min_val=min_index_val, max_val=max_index_val)
         k = self.Q.encode(img)
         k += 128 # Only positive components can be written in a PNG file
         k = k.astype(np.uint8)
-        with open(f"{self.args.output}_QSS.txt", 'w') as f:
-            f.write(f"{self.args.QSS}")
-        rate = 1*8/(k.shape[0]*k.shape[1]) # We suppose that the representation of the QSS requires 1 byte
-        logging.info(f"Written {self.args.output}_QSS.txt")
-        return k, rate
+        return k
 
     def decode(self):
         '''Read a quantized image, "dequantize", and save.'''
         k = self.read()
         y_128 = self.dequantize(k)
         y = (y_128.astype(np.int16) + 128).astype(np.uint8)
-        rate = self.save(y)
+        self.required_bytes = self.save(y)
+        rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
-    def dequantize(self, k, min_index_val=-128, max_index_val=127):
+    def dequantize(self, k):
         '''"Dequantize" an image.'''
         k = k.astype(np.int16)
         k -= 128
-        with open(f"{self.args.input}_QSS.txt", 'r') as f:
-            QSS = int(f.read())
-        self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
-        logging.info(f"Read QSS={QSS} from {self.args.output}_QSS.txt")
+        #self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
         y = self.Q.decode(k)
         return y
 

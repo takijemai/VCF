@@ -22,9 +22,6 @@ from color_transforms.YCoCg import to_RGB
 
 class YCoCg(deadzone.Deadzone_Quantizer):
     
-    def __init__(self, args): # ??
-        super().__init__(args)
-
     def encode(self):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
@@ -36,7 +33,8 @@ class YCoCg(deadzone.Deadzone_Quantizer):
     def decode(self):
         k = self.read()
         YCoCg_y = self.dequantize(k)
-        y_128 = to_RGB(YCoCg_y.astype(np.int16))
+        #y_128 = to_RGB(YCoCg_y.astype(np.int16))
+        y_128 = to_RGB(YCoCg_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
         rate = self.save(y)
