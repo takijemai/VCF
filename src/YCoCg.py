@@ -27,7 +27,7 @@ class YCoCg(deadzone.Deadzone_Quantizer):
         img_128 = img.astype(np.int16) - 128
         YCoCg_img = from_RGB(img_128)
         k = self.quantize(YCoCg_img)
-        self.required_bytes += self.save(k)
+        self.save(k)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
@@ -38,7 +38,7 @@ class YCoCg(deadzone.Deadzone_Quantizer):
         y_128 = to_RGB(YCoCg_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
-        self.required_bytes = self.save(y)
+        self.save(y)
         rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
