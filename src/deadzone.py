@@ -20,7 +20,7 @@ from scalar_quantization.deadzone_quantization import name as quantizer_name
 
 import entropy
 
-entropy.parser.add_argument("-q", "--QSS", type=entropy.int_or_str, help=f"Quantization step size (default: 32)", default=32)
+entropy.parser_encode.add_argument("-q", "--QSS", type=entropy.int_or_str, help=f"Quantization step size (default: 32)", default=32)
 
 class Deadzone_Quantizer(entropy.Entropy_Codec):
 
@@ -73,6 +73,7 @@ if __name__ == "__main__":
     logging.info(f"quantizer = {quantizer_name}")
     entropy.parser.description = __doc__
     args = entropy.parser.parse_known_args()[0]
+    #args = entropy.parser.parse_args()
 
     try:
         logging.info(f"input = {args.input}")
