@@ -31,16 +31,18 @@ DECODE_OUTPUT = "/tmp/decoded.png"
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 subparsers = parser.add_subparsers(help="You must specify one of the following subcomands:", dest="subparser_name")
+
 parser_encode = subparsers.add_parser("encode", help="Encode an image")
-parser_decode = subparsers.add_parser("decode", help='Decode an image')
 parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
 parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
 parser_encode.set_defaults(func=encode)
+
+parser_decode = subparsers.add_parser("decode", help='Decode an image')
 parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
 parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}", default=f"{DECODE_OUTPUT}")    
 parser_decode.set_defaults(func=decode)
 
-class PNG_Codec:
+class PNG:
 
     def __init__(self, args):
         self.args = args
@@ -93,7 +95,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = PNG_Codec(args)
+    codec = PNG(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
