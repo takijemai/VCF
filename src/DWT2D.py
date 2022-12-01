@@ -90,6 +90,8 @@ class DWT2D(YCoCg.YCoCg):
 
     def save_decom(self, decom):
         LL = decom[0]
+        output_fn_without_extension = self.args.output.split('.')[::-1]
+        print(output_fn_without_extension)
         fn = f"{self.args.output}LL{self.levels}"
         print(LL.dtype)
         self.save_fn(LL, fn)
