@@ -17,7 +17,8 @@ import YCoCg
 
 # pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
 #from DWT import color_dyadic_DWT as DWT
-from DWT.color_dyadic_DWT import analyze
+from DWT.color_dyadic_DWT import analyze as DWT_analyze
+from DWT.color_dyadic_DWT import synthesize as DWT_synthesize
 
 # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import from_RGB
@@ -37,7 +38,7 @@ class DWT2D(YCoCg.YCoCg):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         YCoCg_img = from_RGB(img_128)
-        decom_img = analyze(YCoCg_img, self.wavelet, self.levels)
+        decom_img = DWT_analyze(YCoCg_img, self.wavelet, self.levels)
         decom_k = self.quantize_decom(decom_img)
         self.save_decom(decom_k)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
@@ -46,7 +47,7 @@ class DWT2D(YCoCg.YCoCg):
     def decode(self):
         decom_k = self.read_decom()
         decom_y = self.dequantize_decom(k)
-        YCoCg_y = synthesize(decom_y, self.wavelet, self.levels)
+        YCoCg_y = DWT_synthesize(decom_y, self.wavelet, self.levels)
         y_128 = to_RGB(YCoCg_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
@@ -54,41 +55,35 @@ class DWT2D(YCoCg.YCoCg):
         rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
-    def quantize_decom(self, d):
-        k = [self.quantize(d[0])] # LL subband
-        sb_counter = 1 # sb = subband
-        for sr_d in d[1:]: # sr = spatial resolution
-            sr_k = []
-            for sb_d in sr_d:
-                sb_k = self.quantize(sb_d)
-                sr_k.append(sb_k)
-                sb_counter += 1
-        k.append(tuple(sr_k))
-        return k
+    def quantize_decom(self, decom):
+        decom_k = [self.quantize(decom[0])] # LL subband
+        for spatial_resolution in decom[1:]:
+            spatial_resolution_k = []
+            for subband in spatial_resolution:
+                subband_k = self.quantize(subband)
+                spatial_resolution_k.append(subband_k)
+        decom_k.append(tuple(spatial_resolution_k))
+        return decom_k
 
-    def dequantize_decom(k):
-        y = [self.dequantize(k[0])]
-        sb_counter = 1
-        for sr_k in k[1:]:
-            sr_y = []
-            for sb_k in sr_k: # sb = subband
-                sb_y = self.dequantize(sb_k)
-                sr_y.append(sb_y)
-                sb_counter += 1
-        y.append(tuple(sr_y))
-        return y
+    def dequantize_decom(decom_k):
+        decom_y = [self.dequantize(decom_k[0])]
+        for spatial_resolution_k in decom_k[1:]:
+            spatial_resolution_y = []
+            for subband_k in spatial_resolution_k:
+                subband_y = self.dequantize(subband_k)
+                spatial_resolution_y.append(subband_y)
+        decom_y.append(tuple(spatial_resolution_y))
+        return decom_y
 
     def read_decom(self):
-        LL = io.imread(f"{prefix}LL{self.levels}")
+        LL = self.read(f"{prefix}LL{self.levels}")
         decom = [LL]
         resolution_index = self.levels
         for l in range(self.levels, 0, -1):
             subband_names = ["LH", "HL", "HH"]
-            sb = 0
-            resolution = []
-            for sbn in subband_names:
-                resolution.appen(io.imread(f"{self.args.input}{sbn}{resolution_index}"))
-                sb += 1
+            spatial_resolution = []
+            for subband_name in subband_names:
+                spatial_resolution.appen(self.read(f"{self.args.input}{subband_name}{resolution_index}"))
             decom.append(tuple(resolution))
             resolution_index -= 1
         return decom
@@ -96,24 +91,34 @@ class DWT2D(YCoCg.YCoCg):
     def save_decom(self, decom):
         LL = decom[0]
         fn = f"{self.args.output}LL{self.levels}"
-        io.imsave(fn, LL)
-        self.required_bytes = os.path.getsize(fn)
+        print(LL.dtype)
+        self.save_fn(LL, fn)
         resolution_index = self.levels
-        aux_decom = [decom[0][..., 0]]
-        for resolution in decom[1:]:
+        aux_decom = [decom[0][..., 0]] # Used for computing slices
+        for spatial_resolution in decom[1:]:
             subband_names = ["LH", "HL", "HH"]
-            sb = 0
-            aux_resol = []
-            for sbn in subband_names:
-                fn = f"{self.args.output}{sbn}{resolution_index}"
-                io.imsage(fn, resolution[sb])
-                self.required_bytes = os.path.getsize(fn)
-                aux_resol.append(resolution[sb][..., 0])
-                sb += 1
+            subband_index = 0
+            aux_resol = [] # Used for computing slices
+            for subband_name in subband_names:
+                fn = f"{self.args.output}{subband_name}{resolution_index}"
+                self.save_fn(spatial_resolution[subband_index], fn)
+                aux_resol.append(spatial_resolution[sb][..., 0])
+                subband_index += 1
             resolution_index -= 1
             aux_decom.append(tuple(aux_resol))
         self.slices = pywt.coeffs_to_array(aux_decom)[1]
         return slices
+
+    def save_fn(self, img, fn):
+        print(fn)
+        io.imsave(fn, img)
+        self.required_bytes = os.path.getsize(fn)
+        logging.info(f"Written {self.required_bytes} bytes in {self.args.output}")
+
+    def read_fn(self, fn):
+        img = io.imread(fn)
+        logging.info(f"Read {self.args.input} of shape {img.shape}")
+        return img
 
 if __name__ == "__main__":
     logging.info(__doc__)
