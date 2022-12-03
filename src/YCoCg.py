@@ -11,16 +11,15 @@ FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
-import PNG
-import deadzone
+import PNG as EC
+import deadzone as Q
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
 #from image_IO import image_3 as color_image
 from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
-
 from color_transforms.YCoCg import to_RGB
 
-class YCoCg(deadzone.Deadzone_Quantizer):
+class CoDec(Q.CoDec):
     
     def encode(self):
         img = self.read()
@@ -45,8 +44,8 @@ class YCoCg(deadzone.Deadzone_Quantizer):
 if __name__ == "__main__":
     logging.info(__doc__)
     #logging.info(f"quantizer = {gray_pixel_static_scalar_quantization.quantizer_name}")
-    PNG.parser.description = __doc__
-    args = PNG.parser.parse_known_args()[0]
+    EC.parser.description = __doc__
+    args = EC.parser.parse_known_args()[0]
 
     try:
         logging.info(f"input = {args.input}")
@@ -55,7 +54,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = YCoCg(args)
+    codec = CoDec(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")

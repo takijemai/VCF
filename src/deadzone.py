@@ -16,11 +16,11 @@ from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quan
 
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
-import PNG
+import PNG as EC # Entropy Coding
 
-PNG.parser_encode.add_argument("-q", "--QSS", type=PNG.int_or_str, help=f"Quantization step size (default: 32)", default=32)
+EC.parser_encode.add_argument("-q", "--QSS", type=EC.int_or_str, help=f"Quantization step size (default: 32)", default=32)
 
-class Deadzone_Quantizer(PNG.PNG):
+class CoDec(EC.CoDec):
 
     def __init__(self, args, min_index_val=-128, max_index_val=127): # ???
         super().__init__(args)
@@ -74,9 +74,9 @@ class Deadzone_Quantizer(PNG.PNG):
 if __name__ == "__main__":
     logging.info(__doc__) # ???
     logging.info(f"quantizer = {quantizer_name}")
-    PNG.parser.description = __doc__
-    args = PNG.parser.parse_known_args()[0]
-    #args = PNG.parser.parse_args()
+    EC.parser.description = __doc__
+    args = EC.parser.parse_known_args()[0]
+    #args = EC.parser.parse_args()
 
     try:
         logging.info(f"input = {args.input}")
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = Deadzone_Quantizer(args)
+    codec = CoDec(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")

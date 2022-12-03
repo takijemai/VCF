@@ -11,6 +11,8 @@ FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
+import subprocess
+
 def int_or_str(text):
     '''Helper function for argument parsing.'''
     try:
@@ -45,7 +47,7 @@ parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image 
 parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}", default=f"{DECODE_OUTPUT}")    
 parser_decode.set_defaults(func=decode)
 
-class PNG:
+class CoDec:
 
     def __init__(self, args):
         self.args = args
@@ -68,24 +70,27 @@ class PNG:
     def decode(self):
         '''Read an image and save it in the disk.'''
         return self.encode()
-        #img = self.read()
-        #self.save(img)
-        #rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
-        #return rate
-
-    def read(self):
+    
+    def read_fn(self, fn):
         '''Read an image.'''
-        img = io.imread(self.args.input)
-        logging.info(f"Read {self.args.input} of shape {img.shape}")
+        img = io.imread(fn)
+        logging.info(f"Read {fn} of shape {img.shape}")
         return img
 
-    def save(self, img):
-        '''Save to disk the image.'''
-        # The encoding algorithm depends on the output file extension.
-        io.imsave(self.args.output, img, check_contrast=False)
-        self.required_bytes = os.path.getsize(self.args.output)
-        logging.info(f"Written {self.required_bytes} bytes in {self.args.output}")
+    def read(self):
+        return self.read_fn(self.args.input)
 
+    def save_fn(self, img, fn):
+        '''Save to disk the image with filename <fn>.'''
+        # The encoding algorithm depends on the output file extension.
+        io.imsave(fn, img, check_contrast=False)
+        subprocess.run(f"optipng {fn}", shell=True, capture_output=True)
+        self.required_bytes = os.path.getsize(fn)
+        logging.info(f"Written {self.required_bytes} bytes in {fn}")
+
+    def save(self, img):
+        self.save_fn(img, self.args.output)
+        
 if __name__ == "__main__":
     logging.info(__doc__) # ?
     parser.description = __doc__
@@ -99,7 +104,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = PNG(args)
+    codec = CoDec(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")

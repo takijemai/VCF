@@ -14,23 +14,22 @@ FORMAT_DEBUG="%(asctime)s p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s -
 logging.basicConfig(format=FORMAT_INFO, level=logging.INFO)
 #logging.basicConfig(format=FORMAT_DEBUG, level=logging.DEBUG)
 
-import PNG
-import YCoCg
+import PNG as EC
+import YCoCg as CT # Color Transform
 
 #from DWT import color_dyadic_DWT as DWT
-from DWT.color_dyadic_DWT import analyze as DWT_analyze # pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
+from DWT.color_dyadic_DWT import analyze as space_analyze # pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
 
-from DWT.color_dyadic_DWT import synthesize as DWT_synthesize
+from DWT.color_dyadic_DWT import synthesize as space_synthesize
 
 from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 
 from color_transforms.YCoCg import to_RGB
 
-PNG.parser.add_argument("-l", "--levels", type=PNG.int_or_str, help=f"Number of decomposition levels (default: 5)", default=5)
-PNG.parser_encode.add_argument("-w", "--wavelet", type=PNG.int_or_str, help=f"Wavelet name (default: \"db5\")", default="db5")
+EC.parser.add_argument("-l", "--levels", type=EC.int_or_str, help=f"Number of decomposition levels (default: 5)", default=5)
+EC.parser_encode.add_argument("-w", "--wavelet", type=EC.int_or_str, help=f"Wavelet name (default: \"db5\")", default="db5")
 
-#class DWT2D(YCoCg.YCoCg):
-class DWT(YCoCg.YCoCg):
+class CoDec(CT.CoDec):
 
     def __init__(self, args):
         super().__init__(args)
@@ -52,8 +51,8 @@ class DWT(YCoCg.YCoCg):
     def encode(self):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
-        YCoCg_img = from_RGB(img_128)
-        decom_img = DWT_analyze(YCoCg_img, self.wavelet, self.levels)
+        CT_img = from_RGB(img_128)
+        decom_img = space_analyze(CT_img, self.wavelet, self.levels)
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
         self.save_decom(decom_k)
@@ -63,8 +62,8 @@ class DWT(YCoCg.YCoCg):
     def decode(self):
         decom_k = self.read_decom()
         decom_y = self.dequantize_decom(decom_k)
-        YCoCg_y = DWT_synthesize(decom_y, self.wavelet, self.levels)
-        y_128 = to_RGB(YCoCg_y)
+        CT_y = space_synthesize(decom_y, self.wavelet, self.levels)
+        y_128 = to_RGB(CT_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.save(y)
@@ -129,12 +128,12 @@ class DWT(YCoCg.YCoCg):
         #self.slices = pywt.coeffs_to_array(aux_decom)[1]
         #return slices
 
-    def save_fn(self, img, fn):
-        io.imsave(fn, img)
+    def __save_fn(self, img, fn):
+        io.imsave(fn, img, check_contrast=False)
         self.required_bytes = os.path.getsize(fn)
         logging.info(f"Written {self.required_bytes} bytes in {fn}")
 
-    def read_fn(self, fn):
+    def __read_fn(self, fn):
         img = io.imread(fn)
         logging.info(f"Read {fn} of shape {img.shape}")
         return img
@@ -142,8 +141,8 @@ class DWT(YCoCg.YCoCg):
 if __name__ == "__main__":
     logging.info(__doc__)
     #logging.info(f"quantizer = {gray_pixel_static_scalar_quantization.quantizer_name}")
-    PNG.parser.description = __doc__
-    args = PNG.parser.parse_known_args()[0]
+    EC.parser.description = __doc__
+    args = EC.parser.parse_known_args()[0]
 
     try:
         logging.info(f"input = {args.input}")
@@ -152,7 +151,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = DWT(args)
+    codec = CoDec(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")

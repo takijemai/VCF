@@ -21,11 +21,11 @@ logging.basicConfig(format=FORMAT, level=logging.INFO)
 from scalar_quantization.LloydMax_quantization import LloydMax_Quantizer as Quantizer
 from scalar_quantization.LloydMax_quantization import name as quantizer_name
 
-import PNG
+import PNG as EC # Entropy Coding
 
-PNG.parser_encode.add_argument("-q", "--QSS", type=PNG.int_or_str, help=f"Quantization step size (default: 32)", default=32)
+EC.parser_encode.add_argument("-q", "--QSS", type=EC.int_or_str, help=f"Quantization step size (default: 32)", default=32)
 
-class LloydMax_Quantizer(PNG.PNG):
+class CoDec(EC.CoDec):
     
     def __init__(self, args): # ??
         super().__init__(args)
@@ -93,8 +93,8 @@ class LloydMax_Quantizer(PNG.PNG):
 if __name__ == "__main__":
     logging.info(__doc__)
     logging.info(f"quantizer = {quantizer_name}")
-    PNG.parser.description = __doc__
-    args = PNG.parser.parse_known_args()[0]
+    EC.parser.description = __doc__
+    args = EC.parser.parse_known_args()[0]
 
     try:
         logging.info(f"input = {args.input}")
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = LloydMax_Quantizer(args)
+    codec = CoDec(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
