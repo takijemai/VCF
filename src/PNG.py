@@ -29,14 +29,17 @@ ENCODE_OUTPUT = "/tmp/encoded.png"
 DECODE_INPUT = ENCODE_OUTPUT
 DECODE_OUTPUT = "/tmp/decoded.png"
 
+# Main parameters parser
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 subparsers = parser.add_subparsers(help="You must specify one of the following subcomands:", dest="subparser_name")
 
+# Encoder parser
 parser_encode = subparsers.add_parser("encode", help="Encode an image")
 parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
 parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
 parser_encode.set_defaults(func=encode)
 
+# Decoder parser
 parser_decode = subparsers.add_parser("decode", help='Decode an image')
 parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
 parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}", default=f"{DECODE_OUTPUT}")    
@@ -64,10 +67,11 @@ class PNG:
 
     def decode(self):
         '''Read an image and save it in the disk.'''
-        img = self.read()
-        self.save(img)
-        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
-        return rate
+        return self.encode()
+        #img = self.read()
+        #self.save(img)
+        #rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
+        #return rate
 
     def read(self):
         '''Read an image.'''
