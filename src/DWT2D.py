@@ -17,19 +17,20 @@ logging.basicConfig(format=FORMAT_INFO, level=logging.INFO)
 import PNG
 import YCoCg
 
-# pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
 #from DWT import color_dyadic_DWT as DWT
-from DWT.color_dyadic_DWT import analyze as DWT_analyze
+from DWT.color_dyadic_DWT import analyze as DWT_analyze # pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
+
 from DWT.color_dyadic_DWT import synthesize as DWT_synthesize
 
-# pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
-from color_transforms.YCoCg import from_RGB
+from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
+
 from color_transforms.YCoCg import to_RGB
 
 PNG.parser.add_argument("-l", "--levels", type=PNG.int_or_str, help=f"Number of decomposition levels (default: 5)", default=5)
 PNG.parser_encode.add_argument("-w", "--wavelet", type=PNG.int_or_str, help=f"Wavelet name (default: \"db5\")", default="db5")
 
-class DWT2D(YCoCg.YCoCg):
+#class DWT2D(YCoCg.YCoCg):
+class DWT(YCoCg.YCoCg):
 
     def __init__(self, args):
         super().__init__(args)
@@ -151,7 +152,7 @@ if __name__ == "__main__":
         logging.error("You must specify 'encode' or 'decode'")
         quit()
 
-    codec = DWT2D(args)
+    codec = DWT(args)
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
