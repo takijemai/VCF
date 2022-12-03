@@ -25,7 +25,7 @@ import PNG
 
 PNG.parser_encode.add_argument("-q", "--QSS", type=PNG.int_or_str, help=f"Quantization step size (default: 32)", default=32)
 
-class LloydMax_Quantizer(PNG.PNG_Codec):
+class LloydMax_Quantizer(PNG.PNG):
     
     def __init__(self, args): # ??
         super().__init__(args)

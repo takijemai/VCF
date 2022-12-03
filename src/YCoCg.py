@@ -16,8 +16,8 @@ import deadzone
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
 #from image_IO import image_3 as color_image
-# pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
-from color_transforms.YCoCg import from_RGB
+from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
+
 from color_transforms.YCoCg import to_RGB
 
 class YCoCg(deadzone.Deadzone_Quantizer):

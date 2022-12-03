@@ -11,17 +11,16 @@ FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
-# pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
-#from image_IO import image_1 as gray_image
-# pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
-from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
+#from image_IO import image_1 as gray_image # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
+from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
+
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
 import PNG
 
 PNG.parser_encode.add_argument("-q", "--QSS", type=PNG.int_or_str, help=f"Quantization step size (default: 32)", default=32)
 
-class Deadzone_Quantizer(PNG.PNG_Codec):
+class Deadzone_Quantizer(PNG.PNG):
 
     def __init__(self, args, min_index_val=-128, max_index_val=127): # ???
         super().__init__(args)

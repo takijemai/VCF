@@ -82,7 +82,7 @@ class PNG:
     def save(self, img):
         '''Save to disk the image.'''
         # The encoding algorithm depends on the output file extension.
-        io.imsave(self.args.output, img)
+        io.imsave(self.args.output, img, check_contrast=False)
         self.required_bytes = os.path.getsize(self.args.output)
         logging.info(f"Written {self.required_bytes} bytes in {self.args.output}")
 
