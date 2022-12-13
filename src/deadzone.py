@@ -11,9 +11,11 @@ FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.INFO)
 #logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
-#from image_IO import image_1 as gray_image # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
-from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
+# pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
+#from image_IO import image_1 as gray_image
 
+# pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
+from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
 import PNG as EC # Entropy Coding
