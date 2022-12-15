@@ -5,13 +5,13 @@ import os
 from skimage import io # pip install scikit-image
 import numpy as np
 import logging
+import subprocess
+
 #FORMAT = "%(module)s: %(message)s"
 FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 #logging.basicConfig(format=FORMAT)
-logging.basicConfig(format=FORMAT, level=logging.INFO)
-#logging.basicConfig(format=FORMAT, level=logging.DEBUG)
-
-import subprocess
+#logging.basicConfig(format=FORMAT, level=logging.INFO)
+logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
 def int_or_str(text):
     '''Helper function for argument parsing.'''
@@ -63,7 +63,7 @@ class CoDec:
 
     def read_fn(self, fn):
         '''Read the image <fn>.'''
-        img = io.imread(fn)
+        img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
         logging.info(f"Read {fn} of shape {img.shape}")
         return img
 
@@ -77,15 +77,18 @@ class CoDec:
         logging.info(f"Written {self.required_bytes} bytes in {fn}")
 
     def read(self):
-        '''Read the image specified in the class attribute <args.input>.'''
+        '''Read the image specified in the class attribute
+        <args.input>.'''
         return self.read_fn(self.args.input)
 
     def save(self, img):
-        '''Save to disk the image specified in the class attribute < args.output>.'''
+        '''Save to disk the image specified in the class attribute <
+        args.output>.'''
         self.save_fn(img, self.args.output)
         
     def encode(self):
-        '''Read an image and save it in the disk. The input can be online.'''
+        '''Read an image and save it in the disk. The input can be
+        online. This method is overriden in child classes.'''
         img = self.read()
         self.save(img)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
@@ -94,7 +97,10 @@ class CoDec:
     def decode(self):
         '''Read an image and save it in the disk. Notice that we are
         using the PNG image format for both, decode and encode an
-        image. For this reason, both methods do exactly the same.'''
+        image. For this reason, both methods do exactly the same.
+        This method is overriden in child classes.
+
+        '''
         return self.encode()
     
 if __name__ == "__main__":
