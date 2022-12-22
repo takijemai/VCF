@@ -5,10 +5,9 @@ from skimage import io # pip install scikit-image
 import numpy as np
 
 import logging
-#FORMAT = "%(module)s: %(message)s"
-FORMAT = "(%(levelname)s) %(module)s: %(message)s"
-#logging.basicConfig(format=FORMAT)
+#FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 #logging.basicConfig(format=FORMAT, level=logging.INFO)
+FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
 logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
@@ -60,6 +59,7 @@ class CoDec(EC.CoDec):
     def decode(self):
         '''Read a quantized image, "dequantize", and save.'''
         k = self.read()
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")        
         y_128 = self.dequantize(k)
         y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
