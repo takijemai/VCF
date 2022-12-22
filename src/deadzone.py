@@ -8,8 +8,8 @@ import logging
 #FORMAT = "%(module)s: %(message)s"
 FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 #logging.basicConfig(format=FORMAT)
-logging.basicConfig(format=FORMAT, level=logging.INFO)
-#logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+#logging.basicConfig(format=FORMAT, level=logging.INFO)
+logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
 #from image_IO import image_1 as gray_image
@@ -54,6 +54,7 @@ class CoDec(EC.CoDec):
         k = self.Q.encode(img)
         k += 128 # Only positive components can be written in a PNG file
         k = k.astype(np.uint8)
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
         return k
 
     def decode(self):
@@ -69,8 +70,10 @@ class CoDec(EC.CoDec):
         '''"Dequantize" an image.'''
         k = k.astype(np.int16)
         k -= 128
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
         #self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
         y = self.Q.decode(k)
+        logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")
         return y
 
 if __name__ == "__main__":

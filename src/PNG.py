@@ -10,8 +10,8 @@ import subprocess
 #FORMAT = "%(module)s: %(message)s"
 FORMAT = "(%(levelname)s) %(module)s: %(message)s"
 #logging.basicConfig(format=FORMAT)
-logging.basicConfig(format=FORMAT, level=logging.INFO)
-#logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+#logging.basicConfig(format=FORMAT, level=logging.INFO)
+logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
 def int_or_str(text):
     '''Helper function for argument parsing.'''
@@ -65,12 +65,14 @@ class CoDec:
         '''Read the image <fn>.'''
         img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
         logging.info(f"Read {fn} of shape {img.shape}")
+        logging.debug(f"img.shape={img.shape} img.dtype={img.dtype}")
         return img
 
     def save_fn(self, img, fn):
         '''Save to disk the image with filename <fn>.'''
         # Notice that the encoding algorithm depends on the output
         # file extension (PNG).
+        logging.debug(f"img.shape={img.shape} img.dtype={img.dtype}")
         io.imsave(fn, img, check_contrast=False)
         subprocess.run(f"optipng {fn}", shell=True, capture_output=True)
         self.required_bytes = os.path.getsize(fn)
