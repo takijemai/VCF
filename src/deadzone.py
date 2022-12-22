@@ -41,7 +41,7 @@ class CoDec(EC.CoDec):
         img_128 = img.astype(np.int16) - 128
         k = self.quantize(img_128)
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype} k.max={np.max(k)} k.min={np.min(k)}")
-        self.save(k)
+        self.write(k)
         #self.save(img)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
@@ -63,7 +63,7 @@ class CoDec(EC.CoDec):
         y_128 = self.dequantize(k)
         y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
-        self.save(y)
+        self.write(y)
         rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 

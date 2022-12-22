@@ -8,6 +8,7 @@ import numpy as np
 import logging
 #import logging_config
 import subprocess
+import cv2 as cv
 
 def int_or_str(text):
     '''Helper function for argument parsing.'''
@@ -46,6 +47,8 @@ parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image 
 parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT}", default=f"{DECODE_OUTPUT}")    
 parser_decode.set_defaults(func=decode)
 
+COMPRESSION_LEVEL = 9
+
 class CoDec:
 
     def __init__(self, args):
@@ -66,15 +69,29 @@ class CoDec:
         logging.debug(f"img.shape={img.shape} img.dtype={img.dtype}")
         return img
 
-    def save_fn(self, img, fn):
-        '''Save to disk the image with filename <fn>.'''
+    def _write_fn(self, img, fn):
+        '''Write to disk the image with filename <fn>.'''
         # Notice that the encoding algorithm depends on the output
         # file extension (PNG).
         logging.debug(f"img.shape={img.shape} img.dtype={img.dtype}")
-        #io.imsave(fn, img, check_contrast=False)
-        image = Image.fromarray(img.astype('uint8'), 'RGB')
-        image.save(fn)
-        subprocess.run(f"optipng {fn}", shell=True, capture_output=True)
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        cv.imwrite(fn, img, [cv.IMWRITE_PNG_COMPRESSION, COMPRESSION_LEVEL])
+        #if __debug__:
+        #    len_output = os.path.getsize(fn)
+        #    logging.info(f"Before optipng: {len_output} bytes")
+        #subprocess.run(f"optipng {fn}", shell=True, capture_output=True)
+        self.required_bytes = os.path.getsize(fn)
+        logging.info(f"Written {self.required_bytes} bytes in {fn}")
+
+    def write_fn(self, img, fn):
+        '''Write to disk the image with filename <fn>.'''
+        # Notice that the encoding algorithm depends on the output
+        # file extension (PNG).
+        logging.debug(f"img.shape={img.shape} img.dtype={img.dtype}")
+        io.imsave(fn, img, check_contrast=False)
+        #image = Image.fromarray(img.astype('uint8'), 'RGB')
+        #image.save(fn)
+        subprocess.run(f"optipng -nc {fn}", shell=True, capture_output=True)
         self.required_bytes = os.path.getsize(fn)
         logging.info(f"Written {self.required_bytes} bytes in {fn}")
 
@@ -83,16 +100,16 @@ class CoDec:
         <args.input>.'''
         return self.read_fn(self.args.input)
 
-    def save(self, img):
+    def write(self, img):
         '''Save to disk the image specified in the class attribute <
         args.output>.'''
-        self.save_fn(img, self.args.output)
+        self.write_fn(img, self.args.output)
         
     def encode(self):
         '''Read an image and save it in the disk. The input can be
         online. This method is overriden in child classes.'''
         img = self.read()
-        self.save(img)
+        self.write(img)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
