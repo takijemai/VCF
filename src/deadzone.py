@@ -61,7 +61,8 @@ class CoDec(EC.CoDec):
         '''Read a quantized image, "dequantize", and save.'''
         k = self.read()
         y_128 = self.dequantize(k)
-        y = (y_128.astype(np.int16) + 128).astype(np.uint8)
+        y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
+        logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
         self.save(y)
         rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
@@ -74,6 +75,8 @@ class CoDec(EC.CoDec):
         #self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
         y = self.Q.decode(k)
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")
+        assert y.all() > -129
+        assert y.all() < 128
         return y
 
 if __name__ == "__main__":
