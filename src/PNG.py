@@ -3,9 +3,10 @@
 import argparse
 import os
 from skimage import io # pip install scikit-image
+from PIL import Image # pip install 
 import numpy as np
 import logging
-import logging_config
+#import logging_config
 import subprocess
 
 def int_or_str(text):
@@ -30,6 +31,7 @@ DECODE_OUTPUT = "/tmp/decoded.png"
 
 # Main parameter of the arguments parser: "encode" or "decode"
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("-g", "--debug", action="store_true", help=f"Output debug information")
 subparsers = parser.add_subparsers(help="You must specify one of the following subcomands:", dest="subparser_name")
 
 # Encoder parser
@@ -59,6 +61,7 @@ class CoDec:
     def read_fn(self, fn):
         '''Read the image <fn>.'''
         img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
+        #img = Image.open(fn) # https://pillow.readthedocs.io/en/stable/handbook/tutorial.html#using-the-image-class
         logging.info(f"Read {fn} of shape {img.shape}")
         logging.debug(f"img.shape={img.shape} img.dtype={img.dtype}")
         return img
@@ -68,7 +71,9 @@ class CoDec:
         # Notice that the encoding algorithm depends on the output
         # file extension (PNG).
         logging.debug(f"img.shape={img.shape} img.dtype={img.dtype}")
-        io.imsave(fn, img, check_contrast=False)
+        #io.imsave(fn, img, check_contrast=False)
+        image = Image.fromarray(img.astype('uint8'), 'RGB')
+        image.save(fn)
         subprocess.run(f"optipng {fn}", shell=True, capture_output=True)
         self.required_bytes = os.path.getsize(fn)
         logging.info(f"Written {self.required_bytes} bytes in {fn}")
@@ -101,10 +106,17 @@ class CoDec:
         return self.encode()
     
 if __name__ == "__main__":
-    logging.info(__doc__) # ?
     parser.description = __doc__
     #args = parser.parse_known_args()[0]
     args = parser.parse_args()
+
+    if args.debug:
+        FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
+        logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+    else:
+        print("hola")
+        FORMAT = "(%(levelname)s) %(module)s: %(message)s"
+        logging.basicConfig(format=FORMAT, level=logging.INFO)
 
     # If parameters "encode" of "decode" are undefined, the following
     # block causes an AttributeError exceptio.

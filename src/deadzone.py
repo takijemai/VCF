@@ -4,7 +4,7 @@ import argparse
 from skimage import io # pip install scikit-image
 import numpy as np
 import logging
-import logging_config
+#import logging_config
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
 #from image_IO import image_1 as gray_image
@@ -40,9 +40,9 @@ class CoDec(EC.CoDec):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         k = self.quantize(img_128)
-        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
-        #self.save(k)
-        self.save(img)
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype} k.max={np.max(k)} k.min={np.min(k)}")
+        self.save(k)
+        #self.save(img)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
@@ -80,11 +80,20 @@ class CoDec(EC.CoDec):
         return y
 
 if __name__ == "__main__":
-    logging.info(__doc__) # ???
-    logging.info(f"quantizer = {quantizer_name}")
+    #logging.info(__doc__) # ???
     EC.parser.description = __doc__
     args = EC.parser.parse_known_args()[0]
     #args = EC.parser.parse_args()
+
+    if args.debug:
+        FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
+        logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+    else:
+        print("hola")
+        FORMAT = "(%(levelname)s) %(module)s: %(message)s"
+        logging.basicConfig(format=FORMAT, level=logging.INFO)
+
+    logging.info(f"quantizer = {quantizer_name}")
 
     try:
         logging.info(f"input = {args.input}")
