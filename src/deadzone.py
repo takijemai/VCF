@@ -1,14 +1,10 @@
-'''Image quantization using a deadzone scalar quantizer'''
+'''Image quantization using a deadzone scalar quantizer.'''
 
 import argparse
 from skimage import io # pip install scikit-image
 import numpy as np
-
 import logging
-#FORMAT = "(%(levelname)s) %(module)s: %(message)s"
-#logging.basicConfig(format=FORMAT, level=logging.INFO)
-FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
-logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+import logging_config
 
 # pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
 #from image_IO import image_1 as gray_image
@@ -44,7 +40,9 @@ class CoDec(EC.CoDec):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         k = self.quantize(img_128)
-        self.save(k)
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
+        #self.save(k)
+        self.save(img)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
@@ -52,6 +50,8 @@ class CoDec(EC.CoDec):
         '''Quantize the image.'''
         k = self.Q.encode(img)
         k += 128 # Only positive components can be written in a PNG file
+        assert k.all() >= 0
+        assert k.all() <= 2
         k = k.astype(np.uint8)
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
         return k

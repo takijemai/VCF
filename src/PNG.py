@@ -5,13 +5,8 @@ import os
 from skimage import io # pip install scikit-image
 import numpy as np
 import logging
+import logging_config
 import subprocess
-
-#FORMAT = "%(module)s: %(message)s"
-FORMAT = "(%(levelname)s) %(module)s: %(message)s"
-#logging.basicConfig(format=FORMAT)
-#logging.basicConfig(format=FORMAT, level=logging.INFO)
-logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
 def int_or_str(text):
     '''Helper function for argument parsing.'''
