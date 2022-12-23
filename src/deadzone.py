@@ -79,6 +79,7 @@ class CoDec(EC.CoDec):
         assert y.all() < 128
         return y
 
+#import main
 if __name__ == "__main__":
     #logging.info(__doc__) # ???
     EC.parser.description = __doc__
@@ -89,7 +90,6 @@ if __name__ == "__main__":
         FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
         logging.basicConfig(format=FORMAT, level=logging.DEBUG)
     else:
-        print("hola")
         FORMAT = "(%(levelname)s) %(module)s: %(message)s"
         logging.basicConfig(format=FORMAT, level=logging.INFO)
 
@@ -106,4 +106,3 @@ if __name__ == "__main__":
 
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
-

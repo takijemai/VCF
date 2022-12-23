@@ -91,7 +91,9 @@ class CoDec:
         io.imsave(fn, img, check_contrast=False)
         #image = Image.fromarray(img.astype('uint8'), 'RGB')
         #image.save(fn)
-        subprocess.run(f"optipng -nc {fn}", shell=True, capture_output=True)
+        #subprocess.run(f"optipng -nc {fn}", shell=True, capture_output=True)
+        subprocess.run(f"pngcrush {fn} /tmp/pngcrush.png", shell=True, capture_output=True)
+        subprocess.run(f"mv -f /tmp/pngcrush.png {fn}", shell=True, capture_output=True)
         self.required_bytes = os.path.getsize(fn)
         logging.info(f"Written {self.required_bytes} bytes in {fn}")
 
@@ -121,7 +123,7 @@ class CoDec:
 
         '''
         return self.encode()
-    
+
 if __name__ == "__main__":
     parser.description = __doc__
     #args = parser.parse_known_args()[0]
@@ -131,7 +133,6 @@ if __name__ == "__main__":
         FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
         logging.basicConfig(format=FORMAT, level=logging.DEBUG)
     else:
-        print("hola")
         FORMAT = "(%(levelname)s) %(module)s: %(message)s"
         logging.basicConfig(format=FORMAT, level=logging.INFO)
 
@@ -150,4 +151,3 @@ if __name__ == "__main__":
     # Run the encoder or the decoder
     rate = args.func(codec)
     logging.info(f"rate = {rate} bits/pixel")
-

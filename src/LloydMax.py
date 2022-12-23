@@ -34,7 +34,7 @@ class CoDec(EC.CoDec):
         '''Read an image, quantize the image, and save it.'''
         img = self.read()
         k = self.quantize(img)
-        self.save(k)
+        self.write(k)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
@@ -68,7 +68,7 @@ class CoDec(EC.CoDec):
         #k = io.imread(self.args.input)
         k = self.read()
         y = self.dequantize(k)
-        self.save(y)
+        self.write(y)
         rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
