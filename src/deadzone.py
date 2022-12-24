@@ -4,10 +4,7 @@ import argparse
 from skimage import io # pip install scikit-image
 import numpy as np
 import logging
-#import logging_config
-
-# pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
-#from image_IO import image_1 as gray_image
+import main
 
 # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
 from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
@@ -50,8 +47,6 @@ class CoDec(EC.CoDec):
         '''Quantize the image.'''
         k = self.Q.encode(img)
         k += 128 # Only positive components can be written in a PNG file
-        assert k.all() >= 0
-        assert k.all() <= 2
         k = k.astype(np.uint8)
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
         return k
@@ -75,34 +70,7 @@ class CoDec(EC.CoDec):
         #self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
         y = self.Q.decode(k)
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")
-        assert y.all() > -129
-        assert y.all() < 128
         return y
 
-#import main
 if __name__ == "__main__":
-    #logging.info(__doc__) # ???
-    EC.parser.description = __doc__
-    args = EC.parser.parse_known_args()[0]
-    #args = EC.parser.parse_args()
-
-    if args.debug:
-        FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
-        logging.basicConfig(format=FORMAT, level=logging.DEBUG)
-    else:
-        FORMAT = "(%(levelname)s) %(module)s: %(message)s"
-        logging.basicConfig(format=FORMAT, level=logging.INFO)
-
-    logging.info(f"quantizer = {quantizer_name}")
-
-    try:
-        logging.info(f"input = {args.input}")
-        logging.info(f"output = {args.output}")
-    except AttributeError:
-        logging.error("You must specify 'encode' or 'decode'")
-        quit()
-
-    codec = CoDec(args)
-
-    rate = args.func(codec)
-    logging.info(f"rate = {rate} bits/pixel")
+    main.main(EC.parser, logging, CoDec)

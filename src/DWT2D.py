@@ -5,14 +5,8 @@ from skimage import io # pip install scikit-image
 import numpy as np
 import pywt
 import os
-
 import logging
-#FORMAT = "%(module)s: %(message)s"
-FORMAT_INFO = "(%(levelname)s) %(module)s: %(message)s"
-FORMAT_DEBUG="%(asctime)s p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s"
-#logging.basicConfig(format=FORMAT)
-logging.basicConfig(format=FORMAT_INFO, level=logging.INFO)
-#logging.basicConfig(format=FORMAT_DEBUG, level=logging.DEBUG)
+import main
 
 import PNG as EC
 import YCoCg as CT # Color Transform
@@ -55,7 +49,7 @@ class CoDec(CT.CoDec):
         decom_img = space_analyze(CT_img, self.wavelet, self.levels)
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
-        self.save_decom(decom_k)
+        self.write_decom(decom_k)
         rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
@@ -66,7 +60,7 @@ class CoDec(CT.CoDec):
         y_128 = to_RGB(CT_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
-        self.save(y)
+        self.write(y)
         rate = (self.required_bytes*8)/(y.shape[0]*y.shape[1])
         return rate
 
@@ -107,11 +101,11 @@ class CoDec(CT.CoDec):
             resolution_index -= 1
         return decom
 
-    def save_decom(self, decom):
+    def write_decom(self, decom):
         LL = decom[0]
         fn_without_extension = self.args.output.split('.')[0]
         fn = f"{fn_without_extension}_LL_{self.levels}.png"
-        self.save_fn(LL, fn)
+        self.write_fn(LL, fn)
         resolution_index = self.levels
         #aux_decom = [decom[0][..., 0]] # Used for computing slices
         for spatial_resolution in decom[1:]:
@@ -120,7 +114,7 @@ class CoDec(CT.CoDec):
             #aux_resol = [] # Used for computing slices
             for subband_name in subband_names:
                 fn = f"{fn_without_extension}_{subband_name}_{resolution_index}.png"
-                self.save_fn(spatial_resolution[subband_index], fn)
+                self.write_fn(spatial_resolution[subband_index], fn)
                 #aux_resol.append(spatial_resolution[subband_index][..., 0])
                 subband_index += 1
             resolution_index -= 1
@@ -139,20 +133,4 @@ class CoDec(CT.CoDec):
         return img
 
 if __name__ == "__main__":
-    logging.info(__doc__)
-    #logging.info(f"quantizer = {gray_pixel_static_scalar_quantization.quantizer_name}")
-    EC.parser.description = __doc__
-    args = EC.parser.parse_known_args()[0]
-
-    try:
-        logging.info(f"input = {args.input}")
-        logging.info(f"output = {args.output}")
-    except AttributeError:
-        logging.error("You must specify 'encode' or 'decode'")
-        quit()
-
-    codec = CoDec(args)
-
-    rate = args.func(codec)
-    logging.info(f"rate = {rate} bits/pixel")
-
+    main.main(EC.parser, logging, CoDec)

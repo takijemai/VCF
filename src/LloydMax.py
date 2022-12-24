@@ -7,16 +7,9 @@ import os
 from skimage import io # pip install scikit-image
 import numpy as np
 import gzip
-
 import logging
-#FORMAT = "%(module)s: %(message)s"
-FORMAT = "(%(levelname)s) %(module)s: %(message)s"
-#logging.basicConfig(format=FORMAT)
-logging.basicConfig(format=FORMAT, level=logging.INFO)
-#logging.basicConfig(format=FORMAT, level=logging.DEBUG)
+import main
 
-# pip install "image_IO @ git+https://github.com/vicente-gonzalez-ruiz/image_IO"
-#from image_IO import image_3 as color_image
 # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
 from scalar_quantization.LloydMax_quantization import LloydMax_Quantizer as Quantizer
 from scalar_quantization.LloydMax_quantization import name as quantizer_name
@@ -91,20 +84,5 @@ class CoDec(EC.CoDec):
         return y
 
 if __name__ == "__main__":
-    logging.info(__doc__)
+    main.main(EC.parser, logging, CoDec)
     logging.info(f"quantizer = {quantizer_name}")
-    EC.parser.description = __doc__
-    args = EC.parser.parse_known_args()[0]
-
-    try:
-        logging.info(f"input = {args.input}")
-        logging.info(f"output = {args.output}")
-    except AttributeError:
-        logging.error("You must specify 'encode' or 'decode'")
-        quit()
-
-    codec = CoDec(args)
-
-    rate = args.func(codec)
-    logging.info(f"rate = {rate} bits/pixel")
-
