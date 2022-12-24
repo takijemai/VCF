@@ -9,6 +9,7 @@ import logging
 import subprocess
 import cv2 as cv
 import main
+import urllib
 
 def int_or_str(text):
     '''Helper function for argument parsing.'''
@@ -59,13 +60,21 @@ class CoDec:
         else:
             self.encoding = False
         logging.debug(f"encoding = {self.encoding}")
-        self.required_bytes = 0 # Number of output bytes
+        self.input_bytes = 0
+        self.output_bytes = 0
 
     def read_fn(self, fn):
         '''Read the image <fn>.'''
         img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
         #img = Image.open(fn) # https://pillow.readthedocs.io/en/stable/handbook/tutorial.html#using-the-image-class
-        logging.info(f"Read {fn} of shape {img.shape}")
+        try:
+            self.input_bytes = os.path.getsize(fn)
+        except:
+            logging.info(f"read remote image {fn}")
+            req = urllib.request.Request(fn, method='HEAD')
+            f = urllib.request.urlopen(req)
+            self.input_bytes = int(f.headers['Content-Length'])
+        logging.info(f"Read {self.input_bytes} bytes from {fn} with shape {img.shape}")
         logging.debug(f"img.shape={img.shape} img.dtype={img.dtype}")
         return img
 
@@ -80,8 +89,8 @@ class CoDec:
         #    len_output = os.path.getsize(fn)
         #    logging.info(f"Before optipng: {len_output} bytes")
         #subprocess.run(f"optipng {fn}", shell=True, capture_output=True)
-        self.required_bytes = os.path.getsize(fn)
-        logging.info(f"Written {self.required_bytes} bytes in {fn}")
+        self.output_bytes = os.path.getsize(fn)
+        logging.info(f"Written {self.output_bytes} bytes in {fn}")
 
     def write_fn(self, img, fn):
         '''Write to disk the image with filename <fn>.'''
@@ -94,8 +103,8 @@ class CoDec:
         #subprocess.run(f"optipng -nc {fn}", shell=True, capture_output=True)
         subprocess.run(f"pngcrush {fn} /tmp/pngcrush.png", shell=True, capture_output=True)
         subprocess.run(f"mv -f /tmp/pngcrush.png {fn}", shell=True, capture_output=True)
-        self.required_bytes = os.path.getsize(fn)
-        logging.info(f"Written {self.required_bytes} bytes in {fn}")
+        self.output_bytes = os.path.getsize(fn)
+        logging.info(f"Written {self.output_bytes} bytes in {fn}")
 
     def read(self):
         '''Read the image specified in the class attribute
@@ -112,7 +121,7 @@ class CoDec:
         online. This method is overriden in child classes.'''
         img = self.read()
         self.write(img)
-        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
+        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def decode(self):
@@ -123,6 +132,10 @@ class CoDec:
 
         '''
         return self.encode()
+
+    def __del__(self):
+        logging.info(f"Total {self.input_bytes} bytes read")
+        logging.info(f"Total {self.output_bytes} bytes written")
 
 if __name__ == "__main__":
     main.main(parser, logging, CoDec)
