@@ -122,16 +122,18 @@ class CoDec(CT.CoDec):
         #self.slices = pywt.coeffs_to_array(aux_decom)[1]
         #return slices
 
-    def _quantize(self, img):
+    def quantize(self, img):
         '''Quantize the image.'''
         k = self.Q.encode(img)
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype} max(x)={np.max(k)} min(k)={np.min(k)}")
         k += 32768
         k = k.astype(np.uint16)
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
         return k
 
-    def _dequantize(self, k):
+    def dequantize(self, k):
         '''"Dequantize" an image.'''
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
         k = k.astype(np.int16)
         k -= 32768
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")

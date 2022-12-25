@@ -65,15 +65,19 @@ class CoDec:
 
     def read_fn(self, fn):
         '''Read the image <fn>.'''
-        img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
+        #img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
         #img = Image.open(fn) # https://pillow.readthedocs.io/en/stable/handbook/tutorial.html#using-the-image-class
         try:
-            self.input_bytes = os.path.getsize(fn)
+            self.input_bytes += os.path.getsize(fn)
+            img = cv.imread(fn, cv.IMREAD_UNCHANGED)
+            img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+            logging.info(f"Read {os.path.getsize(fn)} bytes from {fn} with shape {img.shape} and type={img.dtype}")
         except:
             req = urllib.request.Request(fn, method='HEAD')
             f = urllib.request.urlopen(req)
             self.input_bytes += int(f.headers['Content-Length'])
-        logging.info(f"Read {self.input_bytes} bytes from {fn} with shape {img.shape} and type={img.dtype}")
+            img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
+            logging.info(f"Read {int(f.headers['Content-Length'])} bytes from{fn} with shape {img.shape} and type={img.dtype}")
         return img
 
     def _write_fn(self, img, fn):
@@ -87,20 +91,23 @@ class CoDec:
         #    logging.info(f"Before optipng: {len_output} bytes")
         #subprocess.run(f"optipng {fn}", shell=True, capture_output=True)
         self.output_bytes += os.path.getsize(fn)
-        logging.info(f"Written {self.output_bytes} bytes in {fn} with shape {img.shape} and type {img.dtype}")
+        logging.info(f"Written {os.path.getsize(fn)} bytes in {fn} with shape {img.shape} and type {img.dtype}")
 
     def write_fn(self, img, fn):
         '''Write to disk the image with filename <fn>.'''
         # Notice that the encoding algorithm depends on the output
         # file extension (PNG).
-        io.imsave(fn, img, check_contrast=False)
+        img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        cv.imwrite(fn, img, [cv.IMWRITE_PNG_COMPRESSION, COMPRESSION_LEVEL])
+
+        #io.imsave(fn, img, check_contrast=False)
         #image = Image.fromarray(img.astype('uint8'), 'RGB')
         #image.save(fn)
         #subprocess.run(f"optipng -nc {fn}", shell=True, capture_output=True)
         subprocess.run(f"pngcrush {fn} /tmp/pngcrush.png", shell=True, capture_output=True)
         subprocess.run(f"mv -f /tmp/pngcrush.png {fn}", shell=True, capture_output=True)
         self.output_bytes += os.path.getsize(fn)
-        logging.info(f"Written {self.output_bytes} bytes in {fn} with shape {img.shape} and type {img.dtype}")
+        logging.info(f"Written {os.path.getsize(fn)} bytes in {fn} with shape {img.shape} and type {img.dtype}")
 
     def read(self):
         '''Read the image specified in the class attribute
