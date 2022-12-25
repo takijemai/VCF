@@ -68,16 +68,17 @@ class CoDec:
         #img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
         #img = Image.open(fn) # https://pillow.readthedocs.io/en/stable/handbook/tutorial.html#using-the-image-class
         try:
-            self.input_bytes += os.path.getsize(fn)
+            input_size = os.path.getsize(fn)
+            self.input_bytes += input_size 
             img = cv.imread(fn, cv.IMREAD_UNCHANGED)
             img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-            logging.info(f"Read {os.path.getsize(fn)} bytes from {fn} with shape {img.shape} and type={img.dtype}")
         except:
             req = urllib.request.Request(fn, method='HEAD')
             f = urllib.request.urlopen(req)
-            self.input_bytes += int(f.headers['Content-Length'])
+            input_size = int(f.headers['Content-Length'])
+            self.input_bytes += input_size
             img = io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
-            logging.info(f"Read {int(f.headers['Content-Length'])} bytes from{fn} with shape {img.shape} and type={img.dtype}")
+        logging.info(f"Read {input_size} bytes from {fn} with shape {img.shape} and type={img.dtype}")
         return img
 
     def _write_fn(self, img, fn):
