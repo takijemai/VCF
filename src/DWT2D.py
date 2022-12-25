@@ -50,7 +50,7 @@ class CoDec(CT.CoDec):
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
         self.write_decom(decom_k)
-        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
+        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def decode(self):
@@ -61,7 +61,7 @@ class CoDec(CT.CoDec):
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.write(y)
-        rate = (self.required_bytes*8)/(y.shape[0]*y.shape[1])
+        rate = (self.input_bytes*8)/(y.shape[0]*y.shape[1])
         return rate
 
     def quantize_decom(self, decom):
@@ -122,6 +122,25 @@ class CoDec(CT.CoDec):
         #self.slices = pywt.coeffs_to_array(aux_decom)[1]
         #return slices
 
+    def _quantize(self, img):
+        '''Quantize the image.'''
+        k = self.Q.encode(img)
+        k += 32768
+        k = k.astype(np.uint16)
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
+        return k
+
+    def _dequantize(self, k):
+        '''"Dequantize" an image.'''
+        k = k.astype(np.int16)
+        k -= 32768
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
+        #self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
+        y = self.Q.decode(k)
+        logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")
+        return y
+
+    '''
     def __save_fn(self, img, fn):
         io.imsave(fn, img, check_contrast=False)
         self.required_bytes = os.path.getsize(fn)
@@ -131,6 +150,7 @@ class CoDec(CT.CoDec):
         img = io.imread(fn)
         logging.info(f"Read {fn} of shape {img.shape}")
         return img
+    '''
 
 if __name__ == "__main__":
     main.main(EC.parser, logging, CoDec)

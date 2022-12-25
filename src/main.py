@@ -4,15 +4,15 @@ def main(parser, logging, CoDec):
     args = parser.parse_args()
 
     if args.debug:
-        FORMAT = "%(asctime)s p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s"
-        #FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
+        #FORMAT = "%(asctime)s p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s"
+        FORMAT = "(%(levelname)s) %(module)s %(funcName)s %(lineno)d: %(message)s"
         logging.basicConfig(format=FORMAT, level=logging.DEBUG)
     else:
         FORMAT = "(%(levelname)s) %(module)s: %(message)s"
         logging.basicConfig(format=FORMAT, level=logging.INFO)
 
     # If parameters "encode" of "decode" are undefined, the following
-    # block causes an AttributeError exceptio.
+    # block causes an AttributeError exception.
     try:
         logging.info(f"input = {args.input}")
         logging.info(f"output = {args.output}")
@@ -20,7 +20,8 @@ def main(parser, logging, CoDec):
         logging.error("Sorry, you must specify 'encode' or 'decode'")
         quit()
 
-    # Create an encoder or a decoder, depending on the first parameter.
+    # Create an encoder or a decoder, depending on the first
+    # parameter.
     codec = CoDec(args)
 
     # Run the encoder or the decoder

@@ -30,7 +30,7 @@ class CoDec(EC.CoDec):
                 self.QSS = int(f.read())
                 logging.info(f"Read QSS={self.QSS} from {self.args.output}_QSS.txt")
         self.Q = Quantizer(Q_step=self.QSS, min_val=min_index_val, max_val=max_index_val)
-        self.required_bytes = 1 # We suppose that the representation of QSS requires 1 byte.
+        self.output_bytes = 1 # We suppose that the representation of QSS requires 1 byte.
 
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
@@ -40,7 +40,7 @@ class CoDec(EC.CoDec):
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype} k.max={np.max(k)} k.min={np.min(k)}")
         self.write(k)
         #self.save(img)
-        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
+        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def quantize(self, img):
@@ -59,7 +59,7 @@ class CoDec(EC.CoDec):
         y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
         self.write(y)
-        rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
+        rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
     def dequantize(self, k):

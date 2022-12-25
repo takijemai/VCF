@@ -28,7 +28,7 @@ class CoDec(EC.CoDec):
         img = self.read()
         k = self.quantize(img)
         self.write(k)
-        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
+        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def quantize(self, img):
@@ -36,7 +36,7 @@ class CoDec(EC.CoDec):
         logging.info(f"QSS = {self.args.QSS}")
         with open(f"{self.args.output}_QSS.txt", 'w') as f:
             f.write(f"{self.args.QSS}")
-        self.required_bytes = 1 # We suppose that the representation of the QSS requires 1 byte
+        self.output_bytes = 1 # We suppose that the representation of the QSS requires 1 byte
         logging.info(f"Written {self.args.output}_QSS.txt")
         if len(img.shape) < 3:
             extended_img = np.expand_dims(img, axis=2)
@@ -53,7 +53,7 @@ class CoDec(EC.CoDec):
                 np.save(file=f, arr=centroids)
             len_codebook = os.path.getsize(f"{self.args.output}_centroids_{c}.gz")
             logging.info(f"Written {len_codebook} bytes in {self.args.output}_centroids_{c}.gz")
-            self.required_bytes += len_codebook
+            self.output_bytes += len_codebook
             k[..., c] = self.Q.encode(extended_img[..., c])
         return k
 
@@ -62,7 +62,7 @@ class CoDec(EC.CoDec):
         k = self.read()
         y = self.dequantize(k)
         self.write(y)
-        rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
+        rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
     def dequantize(self, k):

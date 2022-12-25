@@ -13,14 +13,14 @@ from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ gi
 from color_transforms.YCoCg import to_RGB
 
 class CoDec(Q.CoDec):
-    
+
     def encode(self):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         YCoCg_img = from_RGB(img_128)
         k = self.quantize(YCoCg_img)
         self.write(k)
-        rate = (self.required_bytes*8)/(img.shape[0]*img.shape[1])
+        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def decode(self):
@@ -31,7 +31,7 @@ class CoDec(Q.CoDec):
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.write(y)
-        rate = (self.required_bytes*8)/(k.shape[0]*k.shape[1])
+        rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
 if __name__ == "__main__":
