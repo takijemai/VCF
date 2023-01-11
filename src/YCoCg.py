@@ -1,7 +1,7 @@
 '''Exploiting color (perceptual) redundancy with the YCoCg transform.'''
 
 import argparse
-from skimage import io # pip install scikit-image
+from skimage import io  # pip install scikit-image
 import numpy as np
 import logging
 import main
@@ -9,8 +9,10 @@ import main
 import PNG as EC
 import deadzone as Q
 
-from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
+# pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
+from color_transforms.YCoCg import from_RGB
 from color_transforms.YCoCg import to_RGB
+
 
 class CoDec(Q.CoDec):
 
@@ -33,6 +35,7 @@ class CoDec(Q.CoDec):
         self.write(y)
         rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
+
 
 if __name__ == "__main__":
     main.main(EC.parser, logging, CoDec)
