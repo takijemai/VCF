@@ -7,14 +7,25 @@ import logging
 import main
 
 import PNG as EC
-import deadzone as Q
+import deadzone as DZ
+import LloydMax as LM
 
 # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import from_RGB
 from color_transforms.YCoCg import to_RGB
 
 
-class CoDec(Q.CoDec):
+class CoDec(object):
+    def __init__(self, method):
+        self.method = method
+        if method == "deadzone":
+            self.quantize = DZ.quantize
+            self.dequantize = DZ.dequantize
+        elif method == "LloydMax":
+            self.quantize = LM.quantize
+            self.dequantize = LM.dequantize
+        else:
+            raise ValueError("Invalid quantization method")
 
     def encode(self):
         img = self.read()
@@ -38,4 +49,8 @@ class CoDec(Q.CoDec):
 
 
 if __name__ == "__main__":
-    main.main(EC.parser, logging, CoDec)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--method", choices=["deadzone", "LloydMax"],
+                        required=True, help="Quantization method to use")
+    args = parser.parse_args()
+    main.main(EC.parser, logging, CoDec, args.method)

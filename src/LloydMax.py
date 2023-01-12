@@ -16,7 +16,7 @@ from scalar_quantization.LloydMax_quantization import name as quantizer_name
 
 import PNG as EC  # Entropy Coding
 
-EC.parser_encode.add_argument("-q", "--QSS", type=EC.int_or_str,
+EC.parser_encode.add_argument("-s", "--step_size", type=EC.int_or_str,
                               help=f"Quantization step size (default: 32)", default=32)
 
 
@@ -35,11 +35,11 @@ class CoDec(EC.CoDec):
 
     def quantize(self, img):
         '''Quantize the image.'''
-        logging.info(f"QSS = {self.args.QSS}")
-        with open(f"{self.args.output}_QSS.txt", 'w') as f:
-            f.write(f"{self.args.QSS}")
+        logging.info(f"step_size = {self.args.step_size}")
+        with open(f"{self.args.output}_step_size.txt", 'w') as f:
+            f.write(f"{self.args.step_size}")
         self.output_bytes = 1  # We suppose that the representation of the QSS requires 1 byte
-        logging.info(f"Written {self.args.output}_QSS.txt")
+        logging.info(f"Written {self.args.output}_step_size.txt")
         if len(img.shape) < 3:
             extended_img = np.expand_dims(img, axis=2)
         else:
@@ -50,7 +50,8 @@ class CoDec(EC.CoDec):
                 extended_img[..., c], bins=256, range=(0, 256))
             logging.info(f"histogram = {histogram_img}")
             histogram_img += 1  # Bins cannot be zeroed
-            self.Q = Quantizer(Q_step=self.args.QSS, counts=histogram_img)
+            self.Q = Quantizer(Q_step=self.args.step_size,
+                               counts=histogram_img)
             centroids = self.Q.get_representation_levels()
             with gzip.GzipFile(f"{self.args.output}_centroids_{c}.gz", "w") as f:
                 np.save(file=f, arr=centroids)
@@ -71,9 +72,10 @@ class CoDec(EC.CoDec):
         return rate
 
     def dequantize(self, k):
-        with open(f"{self.args.input}_QSS.txt", 'r') as f:
-            QSS = int(f.read())
-        logging.info(f"Read QSS={QSS} from {self.args.output}_QSS.txt")
+        with open(f"{self.args.input}_step_size.txt", 'r') as f:
+            step_size = int(f.read())
+        logging.info(
+            f"Read step_size={step_size} from {self.args.output}_step_size.txt")
         if len(k.shape) < 3:
             extended_k = np.expand_dims(k, axis=2)
         else:
@@ -83,7 +85,7 @@ class CoDec(EC.CoDec):
             with gzip.GzipFile(f"{self.args.input}_centroids_{c}.gz", "r") as f:
                 centroids = np.load(file=f)
             logging.info(f"Read {self.args.input}_centroids_{c}.gz")
-            self.Q = Quantizer(Q_step=QSS, counts=np.ones(shape=256))
+            self.Q = Quantizer(Q_step=step_size, counts=np.ones(shape=256))
             self.Q.set_representation_levels(centroids)
             y[..., c] = self.Q.decode(extended_k[..., c])
         return y
