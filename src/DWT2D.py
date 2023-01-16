@@ -13,7 +13,7 @@ import PNG as EC
 import YCoCg as CT  # Color Transform
 
 import cv2
-
+from sklearn.cluster import KMeans
 #from DWT import color_dyadic_DWT as DWT
 # pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
 from DWT.color_dyadic_DWT import analyze as space_analyze
@@ -32,9 +32,6 @@ EC.parser_encode.add_argument("-w", "--wavelet", type=EC.int_or_str,
 
 
 class CoDec(CT.CoDec):
-
-    def to_RGB(img):
-        return cv2.cvtColor(img, cv2.COLOR_YCrCb2RGB)
 
     def __init__(self, args):
         super().__init__(args)
@@ -60,11 +57,17 @@ class CoDec(CT.CoDec):
     def to_RGB(img):
         return cv2.cvtColor(img, cv2.COLOR_YCrCb2RGB)
 
+    def vq_quantize(coeffs, n_clusters):
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(
+            coeffs.ravel().reshape(-1, 1))
+        return kmeans.cluster_centers_[kmeans.predict(coeffs)].reshape(coeffs.shape)
+
     def encode(self):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         CT_img = from_RGB(img_128)
         decom_img = space_analyze(CT_img, self.wavelet, self.levels)
+        quantized_coeffs = vq_quantize(decom_img, n_clusters)
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
         self.write_decom(decom_k)
