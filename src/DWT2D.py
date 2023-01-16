@@ -7,9 +7,12 @@ import pywt
 import os
 import logging
 import main
-
+from color_transforms.DCT import from_RGB as DCTRGB
+from color_transforms.DCT import to_RGB as DCT_toRGB
 import PNG as EC
 import YCoCg as CT  # Color Transform
+
+import cv2
 
 #from DWT import color_dyadic_DWT as DWT
 # pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
@@ -18,9 +21,9 @@ from DWT.color_dyadic_DWT import analyze as space_analyze
 from DWT.color_dyadic_DWT import synthesize as space_synthesize
 
 # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
-from color_transforms.YCoCg import from_RGB
+#from color_transforms.YCoCg import from_RGB
 
-from color_transforms.YCoCg import to_RGB
+#from color_transforms.YCoCg import to_RGB
 
 EC.parser.add_argument("-l", "--levels", type=EC.int_or_str,
                        help=f"Number of decomposition levels (default: 5)", default=5)
@@ -29,6 +32,9 @@ EC.parser_encode.add_argument("-w", "--wavelet", type=EC.int_or_str,
 
 
 class CoDec(CT.CoDec):
+
+    def to_RGB(img):
+        return cv2.cvtColor(img, cv2.COLOR_YCrCb2RGB)
 
     def __init__(self, args):
         super().__init__(args)
@@ -47,6 +53,12 @@ class CoDec(CT.CoDec):
                     f"Read wavelet=\"{wavelet_name}\" from {args.input}_wavelet_name.txt")
                 self.wavelet = pywt.Wavelet(wavelet_name)
             logging.info(f"wavelet={wavelet_name} ({self.wavelet})")
+
+    def from_RGB(img):
+        return cv2.cvtColor(img, cv2.COLOR_RGB2YCrCb)
+
+    def to_RGB(img):
+        return cv2.cvtColor(img, cv2.COLOR_YCrCb2RGB)
 
     def encode(self):
         img = self.read()
