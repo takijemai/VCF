@@ -28,6 +28,9 @@ from color_transforms.YCoCg import from_RGB
 
 from color_transforms.YCoCg import to_RGB
 
+from color_transforms.YCrCb import from_RGB as YCRCB_from_RGB
+from color_transforms.YCrCb import to_RGB as YCRCB_to_RGB
+
 EC.parser.add_argument("-l", "--levels", type=EC.int_or_str,
                        help=f"Number of decomposition levels (default: 5)", default=5)
 EC.parser_encode.add_argument("-w", "--wavelet", type=EC.int_or_str,
@@ -57,7 +60,7 @@ class CoDec(CT.CoDec):
     def encode(self):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
-        CT_img = DCTFromRGB(img_128)
+        CT_img = YCRCB_from_RGB(img_128)
         decom_img = space_analyze(CT_img, self.wavelet, self.levels)
 
         logging.debug(f"len(decom_img)={len(decom_img)}")
@@ -70,7 +73,7 @@ class CoDec(CT.CoDec):
         decom_k = self.read_decom()
         decom_y = self.dequantize_decom(decom_k)
         CT_y = space_synthesize(decom_y, self.wavelet, self.levels)
-        y_128 = DCT_toRGB(CT_y)
+        y_128 = YCRCB_to_RGB(CT_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.write(y)
