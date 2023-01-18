@@ -14,7 +14,7 @@ import YCoCg as CT  # Color Transform
 
 import cv2
 
-
+from sklearn.cluster import KMeans
 from scipy.fftpack import dct, idct
 
 #from DWT import color_dyadic_DWT as DWT
@@ -38,6 +38,10 @@ EC.parser_encode.add_argument("-w", "--wavelet", type=EC.int_or_str,
 
 
 class CoDec(CT.CoDec):
+    def vq_quantize(coeffs, n_clusters):
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(
+            coeffs.ravel().reshape(-1, 1))
+        return kmeans.cluster_centers_[kmeans.predict(coeffs)].reshape(coeffs.shape)
 
     def __init__(self, args):
         super().__init__(args)
@@ -62,7 +66,7 @@ class CoDec(CT.CoDec):
         img_128 = img.astype(np.int16) - 128
         CT_img = YCRCB_from_RGB(img_128)
         decom_img = space_analyze(CT_img, self.wavelet, self.levels)
-
+        quantized_coeffs = vq_quantize(decom_img, n_clusters)
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
         self.write_decom(decom_k)
