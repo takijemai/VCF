@@ -18,7 +18,7 @@ import cv2
 from scipy.fftpack import dct, idct
 
 #from DWT import color_dyadic_DWT as DWT
-# pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
+# pip install "DWT2D @ git+https://github.com/vicente-gonzalez-ruiz/DWT2D"
 from DWT2D.color_dyadic_DWT import analyze as space_analyze
 
 from DWT2D.color_dyadic_DWT import synthesize as space_synthesize
