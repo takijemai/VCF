@@ -7,23 +7,26 @@ import pywt
 import os
 import logging
 import main
-from color_transforms.DCT import from_RGB as DCTRGB
+from color_transforms.DCT import from_RGB as DCTFromRGB
 from color_transforms.DCT import to_RGB as DCT_toRGB
 import PNG as EC
 import YCoCg as CT  # Color Transform
 
 import cv2
-from sklearn.cluster import KMeans
+
+
+from scipy.fftpack import dct, idct
+
 #from DWT import color_dyadic_DWT as DWT
 # pip install "DWT @ git+https://github.com/vicente-gonzalez-ruiz/DWT"
-from DWT.color_dyadic_DWT import analyze as space_analyze
+from DWT2D.color_dyadic_DWT import analyze as space_analyze
 
-from DWT.color_dyadic_DWT import synthesize as space_synthesize
+from DWT2D.color_dyadic_DWT import synthesize as space_synthesize
 
 # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
-#from color_transforms.YCoCg import from_RGB
+from color_transforms.YCoCg import from_RGB
 
-#from color_transforms.YCoCg import to_RGB
+from color_transforms.YCoCg import to_RGB
 
 EC.parser.add_argument("-l", "--levels", type=EC.int_or_str,
                        help=f"Number of decomposition levels (default: 5)", default=5)
@@ -51,23 +54,12 @@ class CoDec(CT.CoDec):
                 self.wavelet = pywt.Wavelet(wavelet_name)
             logging.info(f"wavelet={wavelet_name} ({self.wavelet})")
 
-    def from_RGB(img):
-        return cv2.cvtColor(img, cv2.COLOR_RGB2YCrCb)
-
-    def to_RGB(img):
-        return cv2.cvtColor(img, cv2.COLOR_YCrCb2RGB)
-
-    def vq_quantize(coeffs, n_clusters):
-        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(
-            coeffs.ravel().reshape(-1, 1))
-        return kmeans.cluster_centers_[kmeans.predict(coeffs)].reshape(coeffs.shape)
-
     def encode(self):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
-        CT_img = from_RGB(img_128)
+        CT_img = DCTFromRGB(img_128)
         decom_img = space_analyze(CT_img, self.wavelet, self.levels)
-        quantized_coeffs = vq_quantize(decom_img, n_clusters)
+
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
         self.write_decom(decom_k)
@@ -78,7 +70,7 @@ class CoDec(CT.CoDec):
         decom_k = self.read_decom()
         decom_y = self.dequantize_decom(decom_k)
         CT_y = space_synthesize(decom_y, self.wavelet, self.levels)
-        y_128 = to_RGB(CT_y)
+        y_128 = DCT_toRGB(CT_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.write(y)
@@ -104,6 +96,32 @@ class CoDec(CT.CoDec):
                 spatial_resolution_y.append(subband_y)
             decom_y.append(tuple(spatial_resolution_y))
         return decom_y
+
+    def DCT2D_block_decomposition(self, img, block_size=8):
+        """
+        Perform 2D block-based DCT decomposition of an image.
+        """
+        decom_img = np.zeros_like(img)
+        for i in range(0, img.shape[0], block_size):
+            for j in range(0, img.shape[1], block_size):
+                block = img[i:i+block_size, j:j+block_size]
+                dct_block = dct(dct(block, axis=0, norm='ortho'),
+                                axis=1, norm='ortho')
+                decom_img[i:i+block_size, j:j+block_size] = dct_block
+        return decom_img
+
+    def DCT2D_block_synthesis(self, decom_img, block_size=8):
+        """
+        Perform 2D block-based DCT synthesis of an image.
+        """
+        img = np.zeros_like(decom_img)
+        for i in range(0, decom_img.shape[0], block_size):
+            for j in range(0, decom_img.shape[1], block_size):
+                dct_block = decom_img[i:i+block_size, j:j+block_size]
+                block = idct(idct(dct_block, axis=0, norm='ortho'),
+                             axis=1, norm='ortho')
+                img[i:i+block_size, j:j+block_size] = block
+        return img
 
     def read_decom(self):
         fn_without_extension = self.args.input.split('.')[0]
