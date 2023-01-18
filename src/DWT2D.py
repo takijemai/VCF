@@ -15,7 +15,7 @@ import YCoCg as CT  # Color Transform
 import cv2
 
 from sklearn.cluster import KMeans
-from scipy.fftpack import dct, idct
+
 
 #from DWT import color_dyadic_DWT as DWT
 # pip install "DWT2D @ git+https://github.com/vicente-gonzalez-ruiz/DWT2D"
@@ -30,6 +30,11 @@ from color_transforms.YCoCg import to_RGB
 
 from color_transforms.YCrCb import from_RGB as YCRCB_from_RGB
 from color_transforms.YCrCb import to_RGB as YCRCB_to_RGB
+
+from DCT2D.block_DCT import analyze_image
+from DCT2D.block_DCT import synthesize_image
+from scipy.fftpack import dct, idct
+
 
 EC.parser.add_argument("-l", "--levels", type=EC.int_or_str,
                        help=f"Number of decomposition levels (default: 5)", default=5)
@@ -67,6 +72,9 @@ class CoDec(CT.CoDec):
         CT_img = YCRCB_from_RGB(img_128)
         decom_img = space_analyze(CT_img, self.wavelet, self.levels)
         quantized_coeffs = vq_quantize(decom_img, n_clusters)
+        for i in range(self.levels):
+            decom_img = self.DCT2D_block_decomposition(decom_img, block_size=8)
+           # decom_img = self.analyze_image(decom_img, block_size=8)
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
         self.write_decom(decom_k)
@@ -76,6 +84,9 @@ class CoDec(CT.CoDec):
     def decode(self):
         decom_k = self.read_decom()
         decom_y = self.dequantize_decom(decom_k)
+        for i in range(self.levels):
+            decom_y = self.DCT2D_block_synthesis(decom_y, block_size=8)
+            # decom_y = self.synthesize_image(decom_y, block_size=8)
         CT_y = space_synthesize(decom_y, self.wavelet, self.levels)
         y_128 = YCRCB_to_RGB(CT_y)
         y = (y_128.astype(np.int16) + 128)
