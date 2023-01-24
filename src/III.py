@@ -4,7 +4,8 @@ from PIL import Image
 import zlib
 
 # Load image
-im = Image.open(r"C:\Users\Usuario\OneDrive\Bureau\Project VCF\env/image.png")
+im = Image.open(
+    r"C:\Users\Usuario\OneDrive\Bureau\Project VCF\env/image.png").convert('L')
 
 # Convert the image to a numpy array and reshape it to a 2D array of size (height, width)
 im_array = np.array(im)
