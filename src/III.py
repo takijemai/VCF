@@ -13,6 +13,9 @@ im_array = im_array.reshape((im.height, im.width))
 
 # Perform DCT
 dct_coefficients = dct(dct(im_array, axis=0), axis=1)
+# Divide the image into 8x8 blocks
+dct_coefficients_8x8 = dct_coefficients.reshape(-1, 8, 8)
+
 
 # Quantization
 Q = np.array([[16, 11, 10, 16, 24, 40, 51, 61],
@@ -23,7 +26,13 @@ Q = np.array([[16, 11, 10, 16, 24, 40, 51, 61],
               [24, 35, 55, 64, 81, 104, 113, 92],
               [49, 64, 78, 87, 103, 121, 120, 101],
               [72, 92, 95, 98, 112, 100, 103, 99]])
-quantized_coefficients = np.round(dct_coefficients / Q)
+print(dct_coefficients_8x8.shape)
+print(dct_coefficients_8x8.dtype)
+print(Q.shape)
+print(Q.dtype)
+
+quantized_coefficients = np.floor(dct_coefficients_8x8 / Q).astype(Q.dtype)
+
 
 # Encode the quantized coefficients using zlib
 compressed_data = zlib.compress(quantized_coefficients)
@@ -41,11 +50,14 @@ with open("compressed_image.bin", "rb") as f:
 quantized_coefficients = zlib.decompress(compressed_data)
 
 # Dequantization
-dct_coefficients = quantized_coefficients * Q
+dct_coefficients = dct_coefficients_8x8 * Q[np.newaxis, :, :]
+
 
 # Perform IDCT
 im_array_rec = idct(idct(dct_coefficients, axis=0), axis=1)
-
+original_shape = im.size
 # Create image from the array and display it
+im_array_rec = im_array_rec.reshape(original_shape)
+print(im_array_rec)
 im_rec = Image.fromarray(im_array_rec.astype(np.uint8))
 im_rec.show()
