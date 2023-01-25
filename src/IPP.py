@@ -14,9 +14,6 @@ for i in range(1, 11):
         print("Skipping image with shape {}".format(img.shape))
 
 
-# oyther methode:Input image sequence
-#images = [np.random.rand(256, 256) for i in range(10)]
-
 # Quantization table
 quant_table = np.random.rand(8, 8)
 
