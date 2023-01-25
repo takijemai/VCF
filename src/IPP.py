@@ -6,7 +6,8 @@ from scipy.fftpack import dct, idct
 # Load image sequence
 images = []
 for i in range(1, 11):
-    img = cv2.imread('image{}.jpg'.format(i))
+    img = cv2.imread(
+        r'C:\Users\Usuario\OneDrive\Bureau\Project VCF\env/image{}.jpg'.format(i))
     images.append(img)
 
 # oyther methode:Input image sequence
