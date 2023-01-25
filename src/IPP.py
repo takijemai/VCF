@@ -76,4 +76,6 @@ for i in range(0, len(encoded_data), 64*64):
 
     # Close all windows
     cv2.destroyAllWindows()
+
+    # saving the decoded image the first one
     cv2.imwrite("decoded_image.jpg", decoded_images[0])
