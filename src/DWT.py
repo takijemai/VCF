@@ -31,6 +31,7 @@ from color_transforms.YCoCg import to_RGB
 from color_transforms.YCrCb import from_RGB as YCRCB_from_RGB
 from color_transforms.YCrCb import to_RGB as YCRCB_to_RGB
 
+
 from DCT2D.block_DCT import analyze_image
 from DCT2D.block_DCT import synthesize_image
 from scipy.fftpack import dct, idct
