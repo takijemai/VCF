@@ -1,5 +1,3 @@
-'''Exploiting color (perceptual) redundancy with the YCoCg transform.'''
-
 import argparse
 from skimage import io  # pip install scikit-image
 import numpy as np
@@ -7,46 +5,52 @@ import logging
 import main
 
 import PNG as EC
-import deadzone as DZ
+import deadzone as Q
 import LloydMax as LM
-
 
 # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import from_RGB
 from color_transforms.YCoCg import to_RGB
-# new command-line argument to specify the quantization method
-parser = argparse.ArgumentParser(
-    description="Exploiting color (perceptual) redundancy with the YCoCg transform.")
-parser.add_argument("--quantization", type=str, choices=[
-                    "deadzone", "lloydmax"], help="Choose the quantization method: deadzone or lloydmax")
 
 
-class CoDec(DZ.CoDec):
-    def __init__(self, args):
-        self.quantization = args.quantization
-        super().__init__(args)
+class CoDec(Q.CoDec):
+
+    def __init__(self, input_file, output_file, QSS, quantizer):
+        self.input_file = input_file
+        self.output_file = output_file
+        self.QSS = QSS
+        self.quantizer = quantizer
+        self.input_bytes = 0
+        self.output_bytes = 0
+
+    def quantize(self, img):
+        if self.quantizer == "deadzone":
+            return Q.quantize(img, self.QSS)
+        elif self.quantizer == "lloydmax":
+            return LM.quantize(img, self.QSS)
+        else:
+            raise ValueError("Invalid quantizer: {}".format(self.quantizer))
+
+    def dequantize(self, k):
+        if self.quantizer == "deadzone":
+            return Q.dequantize(k, self.QSS)
+        elif self.quantizer == "lloydmax":
+            return LM.dequantize(k, self.QSS)
+        else:
+            raise ValueError("Invalid quantizer: {}".format(self.quantizer))
 
     def encode(self):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         YCoCg_img = from_RGB(img_128)
-        if self.quantization == 'deadzone':
-            k = self.quantize(YCoCg_img)
-        elif self.quantization == 'Lloydmax':
-            self.quantize = LM.quantize
-            k = LM.quantize(YCoCg_img)
+        k = self.quantize(YCoCg_img)
         self.write(k)
         rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
     def decode(self):
         k = self.read()
-        if self.quantization == "deadzone":
-            YCoCg_y = self.dequantize(k)
-        elif self.quantization == "lloydmax":
-            self.dequantize = LM.dequantize
-            YCoCg_y = LM.dequantize(k)
-        #y_128 = to_RGB(YCoCg_y.astype(np.int16))
+        YCoCg_y = self.dequantize(k)
         y_128 = to_RGB(YCoCg_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
@@ -56,5 +60,15 @@ class CoDec(DZ.CoDec):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description='Exploiting color (perceptual) redundancy with the YCoCg transform.')
+    parser.add_argument(
+        '-i', '--input', default='http://www.hpca.ual.es/~vruiz/images/lena.png', help='Input image')
+    parser.add_argument(
+        '-o', '--output', default=r'C:\Users\Usuario\OneDrive\Bureau\Project VCF\env/encodedY.png', help='Output image')
+    parser.add_argument('-q', '--QSS', type=int, default=32,
+                        help='Quantization step size (default: 32)')
+    parser.add_argument('-Q', '--Quantizer', type=str,
+                        default='deadzone', help='Name of the quantizer (default: deadzone)')
     args = parser.parse_args()
     main.main(EC.parser, logging, CoDec)
