@@ -1,3 +1,5 @@
+'''Exploiting color (perceptual) redundancy with the YCoCg transform.'''
+
 import argparse
 from skimage import io  # pip install scikit-image
 import numpy as np
