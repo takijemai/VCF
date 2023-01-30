@@ -17,7 +17,7 @@ import cv2
 from sklearn.cluster import KMeans
 
 
-#from DWT import color_dyadic_DWT as DWT
+# from DWT import color_dyadic_DWT as DWT
 # pip install "DWT2D @ git+https://github.com/vicente-gonzalez-ruiz/DWT2D"
 from DWT2D.color_dyadic_DWT import analyze as space_analyze
 
@@ -71,11 +71,19 @@ class CoDec(CT.CoDec):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         CT_img = YCRCB_from_RGB(img_128)
-        decom_img = space_analyze(CT_img, self.wavelet, self.levels)
-        quantized_coeffs = vq_quantize(decom_img, n_clusters)
+        decom_img = analyze_image(CT_img, self.wavelet, self.levels)
+        quantized_coeffs = []
+        for i in range(3):  # loop over each color subband (Y, Cr, Cb)
+            if i == 0:  # Y subband
+                quantized_coeffs.append(vq_quantize(
+                    decom_img[i], n_clusters, step_size=0.5))
+            else:  # Cr and Cb subbands
+                quantized_coeffs.append(vq_quantize(
+                    decom_img[i], n_clusters, step_size=1.0))
         for i in range(self.levels):
-            decom_img = self.DCT2D_block_decomposition(decom_img, block_size=8)
-           # decom_img = self.analyze_image(decom_img, block_size=8)
+            decom_img = self.analyze_image(decom_img, block_size=8)
+            if i == self.levels - L:  # perform DWT at L-th level
+                decom_img = self.DWT2D_decomposition(decom_img)
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
         self.write_decom(decom_k)
@@ -86,9 +94,9 @@ class CoDec(CT.CoDec):
         decom_k = self.read_decom()
         decom_y = self.dequantize_decom(decom_k)
         for i in range(self.levels):
-            decom_y = self.DCT2D_block_synthesis(decom_y, block_size=8)
-            # decom_y = self.synthesize_image(decom_y, block_size=8)
-        CT_y = space_synthesize(decom_y, self.wavelet, self.levels)
+            # decom_y = self.DCT2D_block_synthesis(decom_y, block_size=8)
+            decom_y = self.synthesize_image(decom_y, block_size=8)
+        CT_y = synthesize_image(decom_y, self.wavelet, self.levels)
         y_128 = YCRCB_to_RGB(CT_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
@@ -100,10 +108,10 @@ class CoDec(CT.CoDec):
         decom_k = [self.quantize(decom[0])]  # LL subband
         for spatial_resolution in decom[1:]:
             spatial_resolution_k = []
-            for subband in spatial_resolution:
-                subband_k = self.quantize(subband)
-                spatial_resolution_k.append(subband_k)
-            decom_k.append(tuple(spatial_resolution_k))
+        for subband in spatial_resolution:
+            subband_k = self.quantize(subband)
+            spatial_resolution_k.append(subband_k)
+        decom_k.append(tuple(spatial_resolution_k))
         return decom_k
 
     def dequantize_decom(self, decom_k):
@@ -173,11 +181,11 @@ class CoDec(CT.CoDec):
             for subband_name in subband_names:
                 fn = f"{fn_without_extension}_{subband_name}_{resolution_index}.png"
                 self.write_fn(spatial_resolution[subband_index], fn)
-                #aux_resol.append(spatial_resolution[subband_index][..., 0])
+                # aux_resol.append(spatial_resolution[subband_index][..., 0])
                 subband_index += 1
             resolution_index -= 1
             # aux_decom.append(tuple(aux_resol))
-        #self.slices = pywt.coeffs_to_array(aux_decom)[1]
+        # self.slices = pywt.coeffs_to_array(aux_decom)[1]
         # return slices
 
     def quantize(self, img):
@@ -196,7 +204,7 @@ class CoDec(CT.CoDec):
         k = k.astype(np.int16)
         k -= 32768
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
-        #self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
+        # self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
         y = self.Q.decode(k)
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")
         return y
