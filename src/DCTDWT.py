@@ -67,7 +67,7 @@ class CoDec(CT.CoDec):
         img = self.read()
         img_128 = img.astype(np.int16) - 128
         CT_img = DCTFromRGB(img_128)
-        decom_img = analyze_image(CT_img, self.wavelet, self.levels)
+        decom_img = space_analyze(CT_img, self.wavelet, self.levels)
         logging.debug(f"len(decom_img)={len(decom_img)}")
         decom_k = self.quantize_decom(decom_img)
         self.write_decom(decom_k)
@@ -77,7 +77,7 @@ class CoDec(CT.CoDec):
     def decode(self):
         decom_k = self.read_decom()
         decom_y = self.dequantize_decom(decom_k)
-        CT_y = synthesize_image(decom_y, self.wavelet, self.levels)
+        CT_y = space_synthesize(decom_y, self.wavelet, self.levels)
         y_128 = DCT_toRGB(CT_y)
         y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)

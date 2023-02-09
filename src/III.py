@@ -46,6 +46,7 @@ with open("compressed_image.bin", "rb") as f:
     compressed_data = f.read()
     quantization_matrix = f.read()
 
+
 # Decompress the data using zlib
 quantized_coefficients = zlib.decompress(compressed_data)
 
