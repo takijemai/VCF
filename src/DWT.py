@@ -7,7 +7,7 @@ import pywt
 import os
 import logging
 import main
-
+import cv2
 import PNG as EC
 import YCoCg as CT  # Color Transform
 
